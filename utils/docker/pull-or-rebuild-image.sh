@@ -61,7 +61,6 @@ fi
 
 git branch
 echo $TRAVIS_BRANCH
-git checkout $TRAVIS_BRANCH
 
 # Find all the commits for the current build
 if [[ -n "$TRAVIS_COMMIT_RANGE" ]]; then
@@ -115,4 +114,5 @@ done
 # Getting here means rebuilding the Docker image is not required.
 # Pull the image from the Docker Hub.
 sudo docker pull nvml/$OS:$OS_VER
+
 
