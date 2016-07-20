@@ -42,3 +42,4 @@ echo $USERPASS | sudo -S mount -t tmpfs none /tmp -osize=4G
 # Configure tests (e.g. ssh for remote tests)
 ./configure-tests.sh
 
+
