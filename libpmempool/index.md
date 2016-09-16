@@ -31,9 +31,10 @@ Man pages that contains a list of the interfaces provided:
 Let files `/path/poolset_file_src` and `/path/poolset_file_dst` have the
 following contents:
 
-<script src="https://gist.github.com/wojtuss/06c22e3a8340e85574cc89d767ae2534.js"></script>
 
-<script src="https://gist.github.com/wojtuss/b9693dd0f1f8962bf01eb0791a68128a.js"></script>
+<code data-gist-id='wojtuss/06c22e3a8340e85574cc89d767ae2534' data-gist-file='poolset_file_src' data-gist-hide-footer='true'></code>
+
+<code data-gist-id='wojtuss/b9693dd0f1f8962bf01eb0791a68128a' data-gist-file='poolset_file_dst' data-gist-hide-footer='true'></code>
 
 Then
 
@@ -48,9 +49,9 @@ the size of the pool remains 60M.
 Let files `/path/poolset_file_src` and `/path/poolset_file_dst` have the
 following contents:
 
-<script src="https://gist.github.com/wojtuss/06c22e3a8340e85574cc89d767ae2534.js"></script>
+<code data-gist-id='wojtuss/06c22e3a8340e85574cc89d767ae2534' data-gist-file='poolset_file_src' data-gist-hide-footer='true'></code>
 
-<script src="https://gist.github.com/wojtuss/f535a8ced7a34522f8b6189c9ddd7e89.js"></script>
+<code data-gist-id='wojtuss/f535a8ced7a34522f8b6189c9ddd7e89' data-gist-file='poolset_file_dst' data-gist-hide-footer='true'></code>
 
 Then
 
@@ -58,9 +59,4 @@ Then
 
 deletes the second replica from the poolset. The first replica remains unchanged and
 the size of the pool is still 60M.
-
-
-<script src="https://gist.github.com/wojtuss/5dc79d006f220353c14361a2ac57aac9.js"></script>
-
-<code data-gist-id='wojtuss/06c22e3a8340e85574cc89d767ae2534' data-gist-file='poolset_file_src' data-gist-hide-footer='true'></code>
 
