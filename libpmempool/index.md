@@ -58,3 +58,9 @@ Then
 
 deletes the second replica from the poolset. The first replica remains unchanged and
 the size of the pool is still 60M.
+
+
+<script src="https://gist.github.com/wojtuss/5dc79d006f220353c14361a2ac57aac9.js"></script>
+
+<code data-gist-id='wojtuss/5dc79d006f220353c14361a2ac57aac9' data-gist-file='poolset_file_src' data-gist-hide-footer='true'></code>
+
