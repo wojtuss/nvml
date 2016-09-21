@@ -184,6 +184,7 @@
 #include "util.h"
 #include "mmap.h"
 #include "file.h"
+#include "device_dax.h"
 #include "valgrind_internal.h"
 
 #ifndef _MSC_VER

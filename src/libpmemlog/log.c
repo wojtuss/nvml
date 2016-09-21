@@ -254,7 +254,6 @@ pmemlog_open_common(const char *path, int cow)
 	plp->size = rep->repsize;
 	plp->set = set;
 	plp->is_pmem = rep->is_pmem;
-	plp->is_dax = rep->part[0].is_dax;
 
 	if (set->nreplicas > 1) {
 		errno = ENOTSUP;

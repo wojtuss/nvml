@@ -82,6 +82,19 @@ int util_range_none(void *addr, size_t len);
 char *util_map_hint_unused(void *addr, size_t len, size_t align);
 char *util_map_hint(size_t len, size_t req_align);
 
+#ifdef DEBUG
+#define POOL_RANGE(pool, addr, len, type) do {\
+	if (!(pool)->set->replica[0]->part[0].is_dax)\
+		RANGE_##type(addr, len);\
+} while (0)
+#else
+#define POOL_RANGE(pool, addr, len, type) do {} while (0)
+#endif
+
+#define POOL_RANGE_RO(pool, addr, len) POOL_RANGE(pool, addr, len, RO)
+#define POOL_RANGE_RW(pool, addr, len) POOL_RANGE(pool, addr, len, RW)
+#define POOL_RANGE_NONE(pool, addr, len) POOL_RANGE(pool, addr, len, NONE)
+
 #define MEGABYTE ((uintptr_t)1 << 20)
 #define GIGABYTE ((uintptr_t)1 << 30)
 
