@@ -1166,7 +1166,7 @@ function require_binary() {
 # require_absolute_path -- continue script execution only if $DIR path is
 #                          an absolute path
 #
-function require_absolute_path() {
+function check_absolute_path() {
 	ABS_DIR=`realpath -m $DIR`
 	if [ "${DIR%/}" != "${ABS_DIR%/}" ]; then
 		echo "Directory \$DIR has to be an absolute path."
@@ -1690,7 +1690,7 @@ function setup() {
 	done
 
 	# $DIR has to be an absolute path
-	require_absolute_path
+	check_absolute_path
 
 	if [ "$FS" != "none" ]; then
 		if [ -d "$DIR" ]; then
