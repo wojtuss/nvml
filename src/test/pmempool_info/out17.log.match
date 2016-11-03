@@ -1,6 +1,6 @@
 
 Poolset part:
-path                     : $(nW)/pool.part1
+path                     : $(nW)pool.part1
 type                     : regular file
 size                     : 33554432
 
@@ -24,7 +24,7 @@ Machine                  : $(*)
 Checksum                 : $(nW) [OK]
 
 Poolset part:
-path                     : $(nW)/pool.part1
+path                     : $(nW)pool.part1
 type                     : regular file
 size                     : 33554432
 
@@ -48,7 +48,7 @@ Machine                  : $(*)
 Checksum                 : $(nW) [OK]
 
 Poolset part:
-path                     : $(nW)/pool.rep.part1
+path                     : $(nW)pool.rep.part1
 type                     : regular file
 size                     : 33554432
 
@@ -72,7 +72,7 @@ Machine                  : $(*)
 Checksum                 : $(nW) [OK]
 
 Poolset part:
-path                     : $(nW)/pool.rep.part2
+path                     : $(nW)pool.rep.part2
 type                     : regular file
 size                     : 33554432
 

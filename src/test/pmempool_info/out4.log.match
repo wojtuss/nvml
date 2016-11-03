@@ -1,6 +1,6 @@
 
 Poolset part:
-path                     : $(nW)/file.pool
+path                     : $(nW)file.pool
 type                     : regular file
 size                     : 16785408
 
@@ -55,7 +55,7 @@ Blocks without flag      : 0 [0 %]
 
 
 Poolset part:
-path                     : $(nW)/file.pool
+path                     : $(nW)file.pool
 type                     : regular file
 size                     : 2097152
 
