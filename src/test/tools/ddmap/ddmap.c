@@ -32,7 +32,7 @@
 
 /*
  * ddmap.c -- simple app for reading and writing data from/to a regular file or
- *	dax device, used by pmempool tests
+ *	dax device using mmap instead of file io API
  */
 
 #include <stdio.h>
@@ -51,12 +51,12 @@
 /*
  * ddmap_context -- context and arguments
  */
-struct ddmap_context
-{
+struct ddmap_context {
 	char *file_in;	/* input file name */
 	char *file_out;	/* output file name */
 	char *str;	/* string data to write */
-	off_t offset;	/* offset from BOF for read/write operations */
+	off_t offset;	/* offset from beginning of file for read/write */
+			/* operations */
 	size_t len;	/* number of bytes to read */
 };
 
@@ -81,33 +81,40 @@ print_usage()
 	printf("-d STRING         - STRING to be written\n");
 	printf("-s N              - skip N bytes at start of input/output\n");
 	printf("-l N              - read or write up to N bytes at a time\n");
+	printf("-h                - print this usage info\n");
 }
 
 /*
  * long_options -- command line options
  */
 static const struct option long_options[] = {
-	{"input-file",	no_argument,		0,	'i'},
-	{"output-file",	no_argument,		0,	'o'},
-	{"string",	no_argument,		0,	'd'},
-	{"offset",	no_argument,		0,	's'},
-	{"length",	no_argument,		0,	'l'},
+	{"input-file",	required_argument,	0,	'i'},
+	{"output-file",	required_argument,	0,	'o'},
+	{"string",	required_argument,	0,	'd'},
+	{"offset",	required_argument,	0,	's'},
+	{"length",	required_argument,	0,	'l'},
 	{"help",	no_argument,		0,	'h'},
 	{0,		0,			0,	 0 },
 };
 
 /*
- * ddmap_print_bytes -- (internal) print array of bytes to stdout
+ * ddmap_print_bytes -- (internal) print array of bytes to stdout;
+ *	printable ASCII characters are printed normally,
+ *	NUL character is printed as a little circle (the degree symbol),
+ *	non-printable ASCII characters are printed as centered dots
  */
 static void
 ddmap_print_bytes(const char *data, size_t len)
 {
 	for (size_t i = 0; i < len; ++i) {
 		if (data[i] == '\0')
+			/* print the degree symbol for NUL */
 			printf("\u00B0");
 		else if (data[i] >= ' ' && data[i] <= '~')
+			/* print printable ASCII character */
 			printf("%c", data[i]);
 		else
+			/* print centered dot for non-printable character */
 			printf("\u00B7");
 	}
 	printf("\n");

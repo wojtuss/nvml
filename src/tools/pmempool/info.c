@@ -571,7 +571,12 @@ pmempool_info_part(struct pmem_info *pip, unsigned repn, unsigned partn, int v)
 
 	/* get size of the part file */
 	ssize_t size = util_file_get_size(path);
-	outv_field(v, "size", "%lu", size);
+	if (size < 0) {
+		outv_err("couldn't get size of %s", path);
+		return -1;
+	}
+	outv_field(v, "size", "%s", out_get_size_str((size_t)size,
+			pip->args.human));
 
 	return 0;
 }
