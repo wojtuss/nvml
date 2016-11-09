@@ -1,8 +1,7 @@
-
-Poolset part:
+Part file:
 path                     : $(nW)file.pool
 type                     : regular file
-size                     : 8388608
+size                     : $(nW)
 
 POOL Header:
 Signature                : PMEMOBJ
@@ -128,11 +127,10 @@ Lane:
   Undo Log - set           : 0 elements
   Undo Log - set cache     : 0 elements
 
-
-Poolset part:
+Part file:
 path                     : $(nW)file.pool
 type                     : regular file
-size                     : 8388608
+size                     : $(nW)
 
 POOL Header:
 Signature                : PMEMOBJ
@@ -177,11 +175,10 @@ Lane:
    Tx range cache:
     0000000000: Offset: $(*) Size: 1
 
-
-Poolset part:
+Part file:
 path                     : $(nW)file.pool
 type                     : regular file
-size                     : 8388608
+size                     : $(nW)
 
 POOL Header:
 Signature                : PMEMOBJ
@@ -228,11 +225,10 @@ Lane:
 
   Undo Log - set cache     : 0 elements
 
-
-Poolset part:
+Part file:
 path                     : $(nW)file.pool
 type                     : regular file
-size                     : 8388608
+size                     : $(nW)
 
 POOL Header:
 Signature                : PMEMOBJ

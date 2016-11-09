@@ -1,8 +1,7 @@
-
-Poolset part:
+Part file:
 path                     : $(nW)pool.part1
 type                     : regular file
-size                     : 33554432
+size                     : $(nW)
 
 POOL Header:
 Signature                : PMEMOBJ [part file]
@@ -22,11 +21,10 @@ Class                    : $(*)
 Data                     : $(*)
 Machine                  : $(*)
 Checksum                 : $(nW) [OK]
-
-Poolset part:
+Part file:
 path                     : $(nW)pool.part1
 type                     : regular file
-size                     : 33554432
+size                     : $(nW)
 
 POOL Header:
 Signature                : PMEMOBJ [part file]
@@ -46,11 +44,10 @@ Class                    : $(*)
 Data                     : $(*)
 Machine                  : $(*)
 Checksum                 : $(nW) [OK]
-
-Poolset part:
+Part file:
 path                     : $(nW)pool.rep.part1
 type                     : regular file
-size                     : 33554432
+size                     : $(nW)
 
 POOL Header:
 Signature                : PMEMOBJ [part file]
@@ -70,11 +67,10 @@ Class                    : $(*)
 Data                     : $(*)
 Machine                  : $(*)
 Checksum                 : $(nW) [OK]
-
-Poolset part:
+Part file:
 path                     : $(nW)pool.rep.part2
 type                     : regular file
-size                     : 33554432
+size                     : $(nW)
 
 POOL Header:
 Signature                : PMEMOBJ [part file]

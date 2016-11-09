@@ -42,8 +42,6 @@
 #include <unistd.h>
 #include <limits.h>
 #include <sys/file.h>
-
-#include "device_dax.h"
 #include "file.h"
 #include "out.h"
 #include "mmap.h"
@@ -313,12 +311,6 @@ util_file_create(const char *path, size_t size, size_t minsize)
 	LOG(3, "path %s size %zu minsize %zu", path, size, minsize);
 
 	ASSERTne(size, 0);
-
-	if (device_dax_is_dax(path)) {
-		ERR("cannot create a file on a dax device");
-		errno = EINVAL;
-		return -1;
-	}
 
 	if (size < minsize) {
 		ERR("size %zu smaller than %zu", size, minsize);

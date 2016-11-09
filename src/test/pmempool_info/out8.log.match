@@ -3,11 +3,10 @@ Number of LBAs in map: $(*)
 Number of LBAs [zero]: $(*)
 Number of LBAs [error]: 1
 Number of LBAs [no flag]: 1
-
-Poolset part:
+Part file:
 path                     : $(nW)file.pool
 type                     : regular file
-size                     : 16785408
+size                     : $(nW)
 
 POOL Header:
 Signature                : PMEMBLK

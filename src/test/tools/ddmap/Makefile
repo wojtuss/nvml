@@ -27,32 +27,19 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 #
-# src/libpmemblk/Makefile -- Makefile for libpmemblk
+# Makefile -- Makefile for ddmap tool
 #
 
-LIBRARY_NAME = pmemblk
-LIBRARY_SO_VERSION = 1
-LIBRARY_VERSION = 0.0
-SOURCE =\
-	$(COMMON)/file.c\
-	$(COMMON)/file_linux.c\
-	$(COMMON)/mmap.c\
-	$(COMMON)/mmap_linux.c\
-	$(COMMON)/out.c\
-	$(COMMON)/pool_hdr.c\
-	$(COMMON)/pool_hdr_linux.c\
-	$(COMMON)/set.c\
-	$(COMMON)/util.c\
-	$(COMMON)/uuid.c\
-	$(COMMON)/uuid_linux.c\
-	$(COMMON)/util_linux.c\
-	blk.c\
-	btt.c\
-	libpmemblk.c
+TOP = ../../../..
 
+TARGET = ddmap
 
-include ../Makefile.inc
+OBJS = ddmap.o
 
-LIBS += -pthread -lpmem
+LIBPMEM=y
+LIBPMEMBLK=y
+TOOLS_COMMON=y
+LIBPMEMBLK_PRIV=btt_info_convert2h
+
+include $(TOP)/src/tools/Makefile.inc

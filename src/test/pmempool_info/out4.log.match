@@ -1,8 +1,7 @@
-
-Poolset part:
+Part file:
 path                     : $(nW)file.pool
 type                     : regular file
-size                     : 16785408
+size                     : $(nW)
 
 POOL Header:
 Signature                : PMEMBLK
@@ -53,11 +52,10 @@ Zeroed blocks            : $(*) [100 %]
 Error blocks             : 0 [0 %]
 Blocks without flag      : 0 [0 %]
 
-
-Poolset part:
+Part file:
 path                     : $(nW)file.pool
 type                     : regular file
-size                     : 2097152
+size                     : $(nW)
 
 POOL Header:
 Signature                : PMEMLOG

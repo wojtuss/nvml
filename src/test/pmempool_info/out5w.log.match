@@ -1,3 +1,8 @@
+Part file:
+path                     : $(nW)file.pool
+type                     : regular file
+size                     : $(nW)
+
 POOL Header:
 00000000$(*)|PMEMLOG.$(*)|
 00000010$(*)|$(*)|
@@ -38,6 +43,11 @@ PMEM LOG header:
 Start offset             : $(*)
 Write offset             : $(*) [OK]
 End offset               : $(*)
+
+Part file:
+path                     : $(nW)file.pool
+type                     : regular file
+size                     : $(nW)
 
 POOL Header:
 00000000$(*)|PMEMBLK.$(*)|

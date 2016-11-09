@@ -64,7 +64,6 @@
 #include "dlsym.h"
 #include "valgrind_internal.h"
 #include "sys_util.h"
-#include "device_dax.h"
 
 #define LIBRARY_REMOTE "librpmem.so.1"
 #define SIZE_AUTODETECT_STR "AUTO"

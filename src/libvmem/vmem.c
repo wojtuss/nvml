@@ -45,7 +45,6 @@
 
 #include "libvmem.h"
 
-#include "device_dax.h"
 #include "jemalloc.h"
 #include "pmemcommon.h"
 #include "sys_util.h"

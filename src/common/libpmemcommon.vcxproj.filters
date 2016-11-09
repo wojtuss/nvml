@@ -50,9 +50,6 @@
     <ClCompile Include="util_windows.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="device_dax_windows.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dlsym.h">
@@ -86,9 +83,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="valgrind_internal.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="device_dax.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

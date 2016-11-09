@@ -41,6 +41,7 @@ export UNITTEST_NUM=7
 
 require_test_type medium
 require_dax_devices 1
+require_fs_type any
 
 setup
 
@@ -78,7 +79,7 @@ srpr 21M 9
 EOF
 
 # Clean the dax devices
-expect_normal_exit $PMEMWRITE$EXESUFFIX -s ${DEVICE_DAX_PATH[0]} 0:z:$HDR_LEN
+expect_normal_exit $DDMAP$EXESUFFIX -o ${DEVICE_DAX_PATH[0]} -l $HDR_LEN
 
 # Create poolset1
 expect_normal_exit $PMEMPOOL$EXESUFFIX create --layout=$LAYOUT obj $POOLSET \

@@ -559,7 +559,7 @@ pmempool_info_part(struct pmem_info *pip, unsigned repn, unsigned partn, int v)
 			&pip->pfile->poolset->replica[repn]->part[partn];
 		path = part->path;
 	} else {
-		outv_title(v, "Poolset part");
+		outv(v, "Part file:\n");
 		path = pip->file_name;
 	}
 	outv_field(v, "path", "%s", path);
@@ -587,9 +587,10 @@ pmempool_info_replica(struct pmem_info *pip, unsigned repn, int v)
 		repn == 0 ? " (master)" : "",
 		rep->remote == NULL ? "local" : "remote",
 		rep->nparts);
-	for (unsigned p = 0; p < rep->nparts; ++p)
+	for (unsigned p = 0; p < rep->nparts; ++p) {
 		if (pmempool_info_part(pip, repn, p, v))
 			return -1;
+	}
 
 	return 0;
 }
@@ -604,9 +605,10 @@ pmempool_info_poolset(struct pmem_info *pip, int v)
 	outv(v, "Poolset structure:\n");
 	outv_field(v, "Number of replicas", "%u",
 			pip->pfile->poolset->nreplicas);
-	for (unsigned r = 0; r < pip->pfile->poolset->nreplicas; ++r)
+	for (unsigned r = 0; r < pip->pfile->poolset->nreplicas; ++r) {
 		if (pmempool_info_replica(pip, r, v))
 			return -1;
+	}
 
 	return 0;
 }
