@@ -609,7 +609,7 @@ check_replica_poolset_uuids(struct pool_set *set, unsigned repn,
 		if (replica_is_part_broken(repn, p, set_hs))
 			continue;
 
-		if (uuidcmp(HDR(rep, p)->poolset_uuid, poolset_uuid) != 0) {
+		if (!uuidcmp(HDR(rep, p)->poolset_uuid, poolset_uuid)) {
 			/*
 			 * two internally consistent replicas have
 			 * different poolset_uuid
@@ -660,8 +660,7 @@ check_poolset_uuids(struct pool_set *set,
 		if (!replica_is_replica_consistent(r, set_hs) || r == r_h)
 			continue;
 
-		if (check_replica_poolset_uuids(set, r, poolset_uuid, set_hs))
-			return -1;
+		check_replica_poolset_uuids(set, r, poolset_uuid, set_hs);
 	}
 	return 0;
 }

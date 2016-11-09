@@ -1,8 +1,7 @@
-
-Poolset part:
+Part file:
 path                     : $(nW)file.pool
 type                     : regular file
-size                     : 2097152
+size                     : $(nW)
 
 POOL Header:
 Signature                : PMEMLOG

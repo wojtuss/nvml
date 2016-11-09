@@ -40,10 +40,12 @@ export UNITTEST_NUM=7
 . ../unittest/unittest.sh
 
 require_test_type medium
-
 require_dax_devices 1
+require_fs_type any
 
 setup
+
+dax_device_zero
 
 LOG=out${UNITTEST_NUM}.log
 LOG_TEMP=out${UNITTEST_NUM}_part.log
@@ -86,7 +88,7 @@ cat $POOLSET_OUT >> $LOG_TEMP
 echo >> $LOG_TEMP
 
 # Clean the dax devices
-expect_normal_exit $PMEMWRITE$EXESUFFIX -s ${DEVICE_DAX_PATH[0]} 0:z:$HDR_LEN
+expect_normal_exit $DDMAP$EXESUFFIX -o ${DEVICE_DAX_PATH[0]} -l $HDR_LEN
 
 # Create a pool
 expect_normal_exit $PMEMPOOL$EXESUFFIX create --layout=$LAYOUT\

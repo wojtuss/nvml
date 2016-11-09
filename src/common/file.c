@@ -42,7 +42,6 @@
 #include <unistd.h>
 #include <limits.h>
 #include <sys/file.h>
-
 #include "file.h"
 #include "out.h"
 #include "mmap.h"

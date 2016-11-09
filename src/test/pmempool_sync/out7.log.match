@@ -12,11 +12,11 @@ type                     : device dax
 size                     : $(nW)
 Replica 1 - local, 2 part(s):
 part 0:
-path                     : $(nW)/part10
+path                     : $(nW)part10
 type                     : regular file
 size                     : $(nW)
 part 1:
-path                     : $(nW)/part11
+path                     : $(nW)part11
 type                     : regular file
 size                     : $(nW)
 
@@ -32,13 +32,12 @@ PMEM OBJ Header:
 Layout                   : OBJ_LAYOUT
 Lanes offset             : 0x2000
 Number of lanes          : 1024
-Heap offset              : $(nW)
-Heap size                : $(nW)
+Heap offset              : 0x302000
+Heap size                : 38785024
 Checksum                 : 0x69ca8e0ab123ebf0 [OK]
-Root offset              : $(nW)
-
-Poolset part:
-path                     : $(nW)/part10
+Root offset              : 0x382440
+Part file:
+path                     : $(nW)part10
 type                     : regular file
 size                     : $(nW)
 
@@ -49,9 +48,8 @@ Mandatory features       : 0x0
 Not mandatory features   : 0x0
 Forced RO                : 0x0
 Pool set UUID            : $(nW)
-
-Poolset part:
-path                     : $(nW)/part11
+Part file:
+path                     : $(nW)part11
 type                     : regular file
 size                     : $(nW)
 
@@ -62,8 +60,7 @@ Mandatory features       : 0x0
 Not mandatory features   : 0x0
 Forced RO                : 0x0
 Pool set UUID            : $(nW)
-
-Poolset part:
+Part file:
 path                     : $(nW)
 type                     : device dax
 size                     : $(nW)
@@ -80,7 +77,7 @@ PMEM OBJ Header:
 Layout                   : OBJ_LAYOUT
 Lanes offset             : 0x2000
 Number of lanes          : 1024
-Heap offset              : $(nW)
-Heap size                : $(nW)
+Heap offset              : 0x302000
+Heap size                : 38785024
 Checksum                 : 0x69ca8e0ab123ebf0 [OK]
-Root offset              : $(nW)
+Root offset              : 0x382440

@@ -41,10 +41,12 @@ export UNITTEST_NUM=9
 . ../unittest/unittest.sh
 
 require_test_type medium
-
 require_dax_devices 2
+require_fs_type any
 
 setup
+
+dax_device_zero
 
 LOG=out${UNITTEST_NUM}.log
 LOG_TEMP=out${UNITTEST_NUM}_part.log
@@ -86,10 +88,6 @@ echo poolset_out >> $LOG_TEMP
 cat $POOLSET_OUT >> $LOG_TEMP
 echo >> $LOG_TEMP
 
-# Clean the dax devices
-$PMEMWRITE$EXESUFFIX -s ${DEVICE_DAX_PATH[0]} 0:z:$HDR_LEN
-$PMEMWRITE$EXESUFFIX -s ${DEVICE_DAX_PATH[1]} 0:z:$HDR_LEN
-
 # Create a pool
 expect_normal_exit $PMEMPOOL$EXESUFFIX create --layout=$LAYOUT\
 	obj $POOLSET_IN >> $LOG_TEMP
@@ -113,7 +111,10 @@ expect_normal_exit $PMEMOBJCLI$EXESUFFIX -s $READ_SCRIPT $POOLSET_OUT >> \
 # Check metadata by pmempool info
 dump_pool_info $POOLSET_OUT >> $LOG_TEMP
 dump_pool_info ${DEVICE_DAX_PATH[1]} >> $LOG_TEMP
-# XXX: add check that dax device is "removed" i.e. cleaned
+
+# Check if dax device's header is cleaned
+expect_normal_exit $DDMAP$EXESUFFIX -i ${DEVICE_DAX_PATH[0]} -l $HDR_LEN >> \
+	$LOG_TEMP
 
 mv $LOG_TEMP $LOG
 check

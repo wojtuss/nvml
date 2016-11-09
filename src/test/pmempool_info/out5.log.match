@@ -1,8 +1,7 @@
-
-Poolset part:
-path                     : $(nW)/file.pool
+Part file:
+path                     : $(nW)file.pool
 type                     : regular file
-size                     : 2097152
+size                     : $(nW)
 
 POOL Header:
 00000000$(*)|PMEMLOG.$(*)|
@@ -45,11 +44,10 @@ Start offset             : $(*)
 Write offset             : $(*) [OK]
 End offset               : $(*)
 
-
-Poolset part:
-path                     : $(nW)/file.pool
+Part file:
+path                     : $(nW)file.pool
 type                     : regular file
-size                     : 16785408
+size                     : $(nW)
 
 POOL Header:
 00000000$(*)|PMEMBLK.$(*)|

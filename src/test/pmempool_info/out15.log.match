@@ -1,8 +1,7 @@
-
-Poolset part:
+Part file:
 path                     : $(nW)file.pool
 type                     : regular file
-size                     : 8388608
+size                     : $(nW)
 
 POOL Header:
 Signature                : PMEMOBJ
@@ -34,11 +33,10 @@ Root offset              : $(*)
 
 No root object...
 
-
-Poolset part:
+Part file:
 path                     : $(nW)file.pool
 type                     : regular file
-size                     : 8388608
+size                     : $(nW)
 
 POOL Header:
 Signature                : PMEMOBJ
