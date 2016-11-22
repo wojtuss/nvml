@@ -2049,6 +2049,7 @@ function init_rpmem_on_node() {
 		CMD="$CMD ${NODE_ENV[$slave]}"
 		CMD="$CMD LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$REMOTE_LD_LIBRARY_PATH:${NODE_LD_LIBRARY_PATH[$slave]}"
 		CMD="$CMD $trace ../rpmemd"
+		#CMD="$CMD gdbserver localhost:1235 ../rpmemd"
 		CMD="$CMD --log-file=$RPMEMD_LOG_FILE"
 		CMD="$CMD --log-level=$RPMEMD_LOG_LEVEL"
 		CMD="$CMD --poolset-dir=$poolset_dir"

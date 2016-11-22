@@ -688,6 +688,7 @@ int
 replica_sync(struct pool_set *set, unsigned flags)
 {
 	LOG(3, "set %p, flags %u", set, flags);
+
 	/* validate user arguments, if not called from transform */
 	if (!(flags & IS_TRANSFORMED) && validate_args(set))
 		return -1;
