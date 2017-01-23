@@ -52,6 +52,13 @@
 #define IS_INCONSISTENT (1 << 1)
 
 /*
+ * A remote replica maked to be recreated exists but its metadata have to be
+ * updated. Due to lack of neat way of updating metadata in remote replicas, we
+ * have to recreate them.
+ */
+#define TO_BE_RECREATED (1 << 2)
+
+/*
  * A flag which can be passed to sync_replica() to indicate that the function is
  * called by pmempool_transform
  */

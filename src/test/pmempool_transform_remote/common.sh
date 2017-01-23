@@ -55,6 +55,8 @@ LAYOUT=OBJ_LAYOUT
 POOLSET_LOCAL_IN=poolset.in
 POOLSET_LOCAL_OUT=poolset.out
 POOLSET_REMOTE=poolset.remote
+POOLSET_REMOTE1=poolset.remote1
+POOLSET_REMOTE2=poolset.remote2
 NODE_DIRS=($(get_node_dir 0) $(get_node_dir 1))
 
 # CLI scripts for writing and reading some data hitting all the parts

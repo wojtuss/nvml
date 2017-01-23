@@ -181,7 +181,8 @@ fill_struct_broken_part_uuids(struct pool_set *set, unsigned repn,
 			continue;
 
 		/* check if part was damaged or was added by transform */
-		if (replica_is_poolset_transformed(flags)) {
+		if (replica_is_poolset_transformed(flags) &&
+				!(REP(set_hs, repn)->flags & TO_BE_RECREATED)) {
 			/* generate new uuid for this part */
 			if (util_uuid_generate(rep->part[p].uuid) < 0) {
 				ERR("cannot generate pool set part UUID");
@@ -191,29 +192,16 @@ fill_struct_broken_part_uuids(struct pool_set *set, unsigned repn,
 			continue;
 		}
 
-		if (!replica_is_part_broken(repn, p + 1, set_hs)) {
-			/* try to get part uuid from the next part */
-			hdrp = HDR(rep, p + 1);
-			memcpy(rep->part[p].uuid, hdrp->prev_part_uuid,
-					POOL_HDR_UUID_LEN);
-		} else if (!replica_is_part_broken(repn, p - 1, set_hs)) {
+		if (!replica_is_part_broken(repn, p - 1, set_hs)) {
 			/* try to get part uuid from the previous part */
 			hdrp = HDR(rep, p - 1);
 			memcpy(rep->part[p].uuid, hdrp->next_part_uuid,
 					POOL_HDR_UUID_LEN);
-		} else if (p == 0 &&
-			!replica_is_part_broken(repn + 1, 0, set_hs)) {
-			/* try to get part uuid from the next replica */
-			hdrp = HDR(REP(set, repn + 1), 0);
-			if (is_uuid_already_used(hdrp->prev_repl_uuid, set,
-					repn)) {
-				ERR("repeated uuid - some replicas were created"
-					" with a different poolset file");
-				errno = EINVAL;
-				return -1;
-			}
-			memcpy(rep->part[p].uuid, hdrp->prev_repl_uuid,
-						POOL_HDR_UUID_LEN);
+		} else if (!replica_is_part_broken(repn, p + 1, set_hs)) {
+			/* try to get part uuid from the next part */
+			hdrp = HDR(rep, p + 1);
+			memcpy(rep->part[p].uuid, hdrp->prev_part_uuid,
+					POOL_HDR_UUID_LEN);
 		} else if (p == 0 &&
 			!replica_is_part_broken(repn - 1, 0, set_hs)) {
 			/* try to get part uuid from the previous replica */
@@ -226,6 +214,19 @@ fill_struct_broken_part_uuids(struct pool_set *set, unsigned repn,
 				return -1;
 			}
 			memcpy(rep->part[p].uuid, hdrp->next_repl_uuid,
+						POOL_HDR_UUID_LEN);
+		} else if (p == 0 &&
+			!replica_is_part_broken(repn + 1, 0, set_hs)) {
+			/* try to get part uuid from the next replica */
+			hdrp = HDR(REP(set, repn + 1), 0);
+			if (is_uuid_already_used(hdrp->prev_repl_uuid, set,
+					repn)) {
+				ERR("repeated uuid - some replicas were created"
+					" with a different poolset file");
+				errno = EINVAL;
+				return -1;
+			}
+			memcpy(rep->part[p].uuid, hdrp->prev_repl_uuid,
 						POOL_HDR_UUID_LEN);
 		} else {
 			/* generate new uuid for this part */

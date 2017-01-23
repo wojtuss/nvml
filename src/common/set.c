@@ -543,7 +543,8 @@ util_replica_close_remote(struct pool_replica *rep, unsigned repn, int del)
 		rep->remote->rpp = NULL;
 	}
 
-	if (del) {
+	if ((del == DELETE_CREATED_PARTS && rep->part[0].created) ||
+			del == DELETE_ALL_PARTS) {
 		LOG(4, "removing remote replica #%u", repn);
 		int ret = Rpmem_remove(rep->remote->node_addr,
 			rep->remote->pool_desc, 0);
@@ -600,9 +601,14 @@ util_poolset_chmod(struct pool_set *set, mode_t mode)
 	for (unsigned r = 0; r < set->nreplicas; r++) {
 		struct pool_replica *rep = set->replica[r];
 
+		/* skip remote replicas */
+		if (rep->remote != NULL)
+			continue;
+
 		for (unsigned p = 0; p < rep->nparts; p++) {
 			struct pool_set_part *part = &rep->part[p];
 
+			/* skip not created parts */
 			if (!part->created)
 				continue;
 
@@ -1276,6 +1282,7 @@ util_poolset_remote_open(struct pool_replica *rep, unsigned repidx,
 			ERR("creating remote replica #%u failed", repidx);
 			return -1;
 		}
+		rep->part[0].created = 1;
 	} else { /* open */
 		struct rpmem_pool_attr rpmem_attr_open;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017, Intel Corporation
+ * Copyright 2016, Intel Corporation
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -55,36 +55,15 @@
 #include "uuid.h"
 
 /*
- * check_flags_sync -- (internal) check if flags are supported for sync
- */
-static int
-check_flags_sync(unsigned flags)
-{
-	flags &= ~(unsigned)PMEMPOOL_DRY_RUN;
-	return flags > 0;
-}
-
-/*
- * check_flags_transform -- (internal) check if flags are supported for
- *                          transform
- */
-static int
-check_flags_transform(unsigned flags)
-{
-	flags &= ~(unsigned)PMEMPOOL_DRY_RUN;
-	return flags > 0;
-}
-
-/*
  * replica_get_part_data_len -- get data length for given part
  */
 size_t
 replica_get_part_data_len(struct pool_set *set_in, unsigned repn,
 		unsigned partn)
 {
-	return MMAP_ALIGN_DOWN(
+	return PAGE_ALIGNED_DOWN_SIZE(
 			set_in->replica[repn]->part[partn].filesize) -
-			((partn == 0) ? POOL_HDR_SIZE : Mmap_align);
+			POOL_HDR_SIZE;
 }
 
 /*
@@ -667,7 +646,8 @@ check_replica_poolset_uuids(struct pool_set *set, unsigned repn,
 			 */
 			if (replica_is_replica_broken(repn, set_hs)) {
 				/* mark broken replica as inconsistent */
-				REP(set_hs, repn)->flags |= IS_INCONSISTENT;
+				REP(set_hs, repn)->flags |=
+						IS_INCONSISTENT;
 			} else {
 				/*
 				 * two consistent unbroken replicas
@@ -774,9 +754,21 @@ check_uuids_between_replicas(struct pool_set *set,
 				/*
 				 * two unbroken and internally consistent
 				 * adjacent replicas have different adjacent
-				 * replica uuids - mark one as inconsistent
+				 * replica uuids - mark one as inconsistent;
+				 * in the first instance mark remote replicas;
+				 * remote replicas has to be marked as broken
+				 * instead, because their metadata cannot be
+				 * updated and the whole replica has to be
+				 * recreated
 				 */
-				rep_n_hs->flags |= IS_INCONSISTENT;
+				if (rep_n->remote != NULL)
+					rep_n_hs->flags |=
+						IS_BROKEN | TO_BE_RECREATED;
+				else if (rep->remote != NULL)
+					rep_hs->flags |=
+						IS_BROKEN | TO_BE_RECREATED;
+				else
+					rep_n_hs->flags |= IS_INCONSISTENT;
 				continue;
 			}
 		}
@@ -841,6 +833,45 @@ check_replica_sizes(struct pool_set *set, struct poolset_health_status *set_hs)
 }
 
 /*
+ * update_remote_replicas_consistency -- (internal) update consistency status
+ *	of all remote replicas, so that all remote replicas which are adjacent
+ *	to broken or inconsistent ones also were marked as inconsistent
+ */
+static void
+update_remote_replicas_consistency(struct pool_set *set,
+		struct poolset_health_status *set_hs)
+{
+	LOG(3, "set %p, set_hs %p", set, set_hs);
+	int changes;
+	do {
+		changes = 0;
+		for (unsigned r = 0; r < set->nreplicas; ++r) {
+			/* skip healthy replicas */
+			if (replica_is_replica_healthy(r, set_hs))
+				continue;
+
+			struct pool_replica *rep_next = REP(set, r + 1);
+			if (rep_next->remote != NULL &&
+					replica_is_replica_healthy(r + 1,
+							set_hs)) {
+				REP(set_hs, r + 1)->flags |=
+						IS_BROKEN | TO_BE_RECREATED;
+				++changes;
+			}
+
+			struct pool_replica *rep_prev = REP(set, r - 1);
+			if (rep_prev->remote != NULL &&
+					replica_is_replica_healthy(r - 1,
+							set_hs)) {
+				REP(set_hs, r - 1)->flags |=
+						IS_BROKEN | TO_BE_RECREATED;
+				++changes;
+			}
+		}
+	} while (changes > 0);
+}
+
+/*
  * replica_check_poolset_health -- check if a given poolset can be considered as
  *                         healthy, and store the status in a helping structure
  */
@@ -895,6 +926,14 @@ replica_check_poolset_health(struct pool_set *set,
 		LOG(1, "replica sizes check failed");
 		goto err;
 	}
+
+	/*
+	 * mark remote replicas which are adjacent do broken or inconsistent
+	 * ones as inconsistent; forcing to recreate them is a dirty way to fix
+	 * the linkage between those replicas
+	 * XXX: make updating uuids of remote replicas smarter
+	 */
+	update_remote_replicas_consistency(set, set_hs);
 
 	if (check_store_all_sizes(set, set_hs)) {
 		LOG(1, "reading pool sizes failed");
@@ -1085,13 +1124,6 @@ pmempool_sync(const char *poolset, unsigned flags)
 		goto err;
 	}
 
-	/* check if flags are supported */
-	if (check_flags_sync(flags)) {
-		ERR("unsupported flags");
-		errno = EINVAL;
-		goto err;
-	}
-
 	/* open poolset file */
 	int fd = util_file_open(poolset, NULL, 0, O_RDONLY);
 	if (fd < 0) {
@@ -1158,13 +1190,6 @@ pmempool_transform(const char *poolset_src,
 		goto err;
 	}
 
-	/* check if flags are supported */
-	if (check_flags_transform(flags)) {
-		ERR("unsupported flags");
-		errno = EINVAL;
-		goto err;
-	}
-
 	/* open the source poolset file */
 	int fd_in = util_file_open(poolset_src, NULL, 0, O_RDONLY);
 	if (fd_in < 0) {
@@ -1188,7 +1213,7 @@ pmempool_transform(const char *poolset_src,
 		goto err;
 	}
 
-	del_parts_mode del = DO_NOT_DELETE_PARTS;
+	int del = 0;
 
 	/* parse the destination poolset file */
 	struct pool_set *set_out = NULL;

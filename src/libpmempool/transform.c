@@ -145,8 +145,8 @@ check_if_remote_replica_used_once(struct pool_set *set, unsigned repn)
 			continue;
 
 		struct remote_replica *repr = REP(set, r)->remote;
-		if (strcmp(rep->node_addr, repr->node_addr) ||
-				strcmp(rep->pool_desc, repr->pool_desc)) {
+		if (!strcmp(rep->node_addr, repr->node_addr) &&
+				!strcmp(rep->pool_desc, repr->pool_desc)) {
 			ERR("remote replica %u is used multiple times", repn);
 			return -1;
 		}
@@ -279,8 +279,8 @@ compare_replicas(struct pool_replica *r1, struct pool_replica *r2)
 	}
 	/* both replicas are remote */
 	if (r1->remote != NULL && r2->remote != NULL) {
-		return r1->remote->node_addr != r2->remote->node_addr ||
-				r1->remote->pool_desc != r2->remote->pool_desc;
+		return strcmp(r1->remote->node_addr, r2->remote->node_addr) ||
+			strcmp(r1->remote->pool_desc, r2->remote->pool_desc);
 	}
 	/* a remote and a local replicas */
 	return 1;
@@ -426,7 +426,7 @@ delete_replicas(struct pool_set *set, struct poolset_compare_status *set_s)
 					return -1;
 			} else {
 				if (util_replica_close_remote(rep, r,
-						DELETE_CREATED_PARTS))
+						DELETE_ALL_PARTS))
 					return -1;
 			}
 		}
