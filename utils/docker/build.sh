@@ -35,7 +35,7 @@
 #            prepared for building NVML project.
 #
 
-if [[ ( "$TRAVIS_EVENT_TYPE" != "cron" && "$TRAVIS_BRANCH" != "coverity_scan" \
+if [[ "$TRAVIS_EVENT_TYPE" != "cron" && "$TRAVIS_BRANCH" != "coverity_scan" \
 	&& "$COVERITY" -eq 1 ]]; then
 	echo "INFO: Skip Coverity scan job if build is triggered neither by " \
 		"'cron' nor by a push to 'coverity_scan' branch"
