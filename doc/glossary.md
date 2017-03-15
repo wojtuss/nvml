@@ -1,7 +1,7 @@
 ---
-title: "(lib)pmempool Glossary"
-description: "Glossary of terms used in (lib)pmempool"
-keywords: "libpmempool, pmempool, terms, definitions, glossary"
+title: "libpmemlot Glossary"
+description: "Glossary of terms used in libpmemlot"
+keywords: "libpmemlot, pmemlot, terms, definitions, glossary"
 ---
 
 ## part file
@@ -10,22 +10,25 @@ a regular file or a device DAX being a media for a [part](#part)
 
 ## part
 
-a building block of a [replica](#replica); consists of data and metadata which
+a building block of a [replica](#replica); consists of metadata and data which
 are stored in a single [part file](#part file)
 
 ## replica
 
-a set of connected [parts](#part); provides a [pool](#pool)
+a set of connected [parts](#part); provides a [lot](#lot)
 
-## poolset
-
-a set of connected [replicas](#replica); all the replicas but the first one
-serve as a backup for the [master replica](#master replica)
-
-## pool
+## lot
 a continuous area of memory exposed by a single [replica](#replica); it is
 comprised of memory areas from mapped data of the [replica](#replica)'s
 [parts](#part)
+
+## pool
+a continuous area of memory developed by libpmemobj/blk/log in a [lot](#lot)
+
+## repset
+
+a set of connected [replicas](#replica); all the replicas but the first one
+serve as a backup for the [master replica](#master replica)
 
 ## part's size
 
@@ -35,21 +38,26 @@ pagesize
 
 ## replica's size
 
-maximum capacity of a [replica](#replica); equals the sum of all the
-[replica](#replica)'s [parts's sizes](#part size)
+size of a [lot](#lot) exposed by the replica; it determines the maximum capacity
+of a [replica](#replica)
 
-## poolset's size
+## repset's size
 
-maximum capacity of a [poolset](#poolset); equals the minimum of sizes of all
-[replicas' sizes](#replica's size) comprising the [poolset](#poolset)
+maximum capacity of a [repset](#repset); equals the minimum of sizes of all
+lots exposed by [replicas](#replica) comprising the [repset](#repset)
 
 ## replica's poolsize
 
-current size of a [pool](#pool) exposed by the [replica](#replica)
+current size of a [pool](#pool) stored in the [lot](#lot) exposed by the
+[replica](#replica)
 
-## poolset's poolsize
+## repset's poolsize
 
-current size of the [master pool](#master pool)
+current size of a [pool](#pool) stored in the [master lot](#master lot)
+
+## master lot
+
+a [lot](#lot) exposed by the [master replica](#master replica)
 
 ## master pool
 
@@ -57,9 +65,9 @@ a [pool](#pool) exposed by the [master replica](#master replica)
 
 ## master replica
 
-the first [replica](#replica) in a [poolset](#poolset)
+the first [replica](#replica) in a [repset](#repset)
 
-## poolset file
+## repset file
 
-a text file describing the structure of a [poolset](#poolset)
+a text file describing the structure of a [repset](#repset)
 
