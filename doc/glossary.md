@@ -65,7 +65,7 @@ a [lot](#lot) exposed by the [master replica](#master replica)
 
 ## master pool
 
-a [pool](#pool) exposed by the [master replica](#master replica)
+a [pool](#pool) stored in the [master lot](#master lot)
 
 ## repset file
 
