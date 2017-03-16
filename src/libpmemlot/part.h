@@ -31,7 +31,7 @@
  */
 
 /*
- * poolset.h -- internal definitions for poolset processing functions
+ * part.h -- internal definitions for part processing functions
  *
  * For definitions of the terms used see doc/glossary.md
  */
@@ -42,8 +42,6 @@ struct part {
 	struct fileh *file;
 	size_t size;		/* aligned to page size */
 	int created;		/* indicates newly created (zeroed) file */
-
-	/* util_poolset_open/create */
 	void *remote_hdr;	/* allocated header for remote replica */
 	void *hdr;		/* base address of header */
 	size_t hdrsize;		/* size of the header mapping */
@@ -54,6 +52,9 @@ struct part {
 	uuid_t uuid;
 	int health;
 };
+
+/* get a pointer to the header of the (p)th part */
+#define HDR(rep, p) ((struct pool_hdr *)(PART(rep, p).hdr))
 
 ssize_t part_get_size(struct part *part);
 int part_is_broken(struct part *part);

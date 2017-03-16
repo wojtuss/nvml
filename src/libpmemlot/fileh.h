@@ -45,6 +45,8 @@ struct fileh {
 	int flags;		/* stores flags used when opening the file, */
 				/* valid only if fd >= 0 */
 	ssize_t size;		/* aligned to page size */
-	int is_device_dax;	/* indicates if the part is on device dax */
+	int is_dev_dax;	/* indicates if the part is on device dax */
 };
 
+int fileh_open(const char *path, int flags, struct fileh *file);
+int fileh_close(struct fileh *file);

@@ -31,23 +31,40 @@
  */
 
 /*
- * poolset.h -- internal definitions for poolset processing functions
+ * replica.h -- internal definitions for replica processing functions
  *
  * For definitions of the terms used see doc/glossary.md
  */
 
 #include "libpmemlot.h"
 
+enum del_parts_mode {
+	DELETE_NONE,	/* do not delete part files */
+	DELETE_CREATED,	/* delete only newly created part files */
+	DELETE_ALL	/* force delete all part files */
+};
+
 struct replica {
 	int nparts;
 	struct part parts[];
-	size_t size;		/* total size of all the parts (mappings) */
-	size_t poolsize;	/* current, effective size of the pool, */
-				/* valid only for healthy replica */
+	size_t size;		/* size of the replica's lot */
+	size_t poolsize;	/* current size of a pool stored in the lot */
 	int is_pmem;		/* true if all the parts are in PMEM */
 	struct remote_replica *remote;
 	int health;		/* flags indicating health status */
 };
+
+/* get the (p)th part */
+#define PART(rep, p) ((rep)->part[p])
+
+int replica_close(struct replica *rep, enum del_parts_mode del);
+int replica_close_local(struct replica *rep, enum del_parts_mode del);
+int replica_close_remote(struct replica *rep, enum del_parts_mode del);
+// z util_replica_close
+int replica_close_lot(struct replica *rep);
+
+
+//-----------
 
 ssize_t replica_get_size(struct replica *rep);
 ssize_t replica_get_poolsize(struct replica *rep);
@@ -55,5 +72,4 @@ int replica_is_healthy(struct replica *rep);
 int replica_is_broken(struct replica *rep);
 
 int replica_open(struct replica *rep);
-int replica_close(struct replica *rep);
 

@@ -31,33 +31,52 @@
  */
 
 /*
- * poolset.h -- internal definitions for poolset processing functions
+ * repset.h -- internal definitions for repset processing functions
  *
  * For definitions of the terms used see doc/glossary.md
  */
 
 #include "libpmemlot.h"
 
-struct poolset {
+struct repset {
 	uuid_t uuid;
 	int nreplicas;
 	struct replica *replicas[];
 	int rdonly;
 	int zeroed;
-	size_t size;		/* total capacity of the poolset */
+	size_t size;		/* size of the lot exposed by the repset */
 				/* equals the smallest replica size */
-	size_t poolsize;	/* current size of the poolt */
+	size_t poolsize;	/* current size of the pool stored in the lot */
 	int remote;
 	int health;
 };
 
-ssize_t poolset_get_size(struct poolset *set);
-ssize_t poolset_get_poolsize(struct poolset *set);
-int poolset_find_healthy_replica(struct poolset *set);
-int poolset_is_healthy(struct poolset *set);
+/* get the (r)th replica */
+#define REP(set, r) ((set)->replica[r])
 
-int poolset_open(struct poolset *set);
-int poolset_close(struct poolset *set);
-int poolset_sync(struct poolset *set);
-int poolset_transform(struct poolset *set);
-int poolset_check(struct poolset *set);
+// z util_poolset_parse i util_poolset_read
+int repset_parse(struct repset **setp, struct fileh *file);
+// z util_poolset_create_set
+int repset_create(struct repset **setp, struct fileh *file,
+		size_t poolsize, size_t, minsize);
+
+int repset_open(struct repset *set, int flags);
+int repset_close(struct repset *set, enum del_parts_mode del);
+void repset_free(struct repset *set);
+int repset_chmod(struct repset *set, mode_t mode);
+// sprawdź czy potrzebne w headerze
+int repset_fdclose(struct repset *set);
+int repset_is_repset_file(struct fileh *file);
+
+ssize_t repset_get_size(struct repset *set);
+ssize_t repset_get_poolsize(struct repset *set);
+
+//-----------
+
+
+int repset_find_healthy_replica(struct repset *set);
+int repset_is_healthy(struct repset *set);
+
+int repset_sync(struct repset *set);
+int repset_transform(struct repset *set);
+int repset_check(struct repset *set);
