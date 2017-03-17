@@ -106,7 +106,11 @@ struct pool_hdr {
 	uuid_t next_repl_uuid; /* next replica */
 	uint64_t crtime;		/* when created (seconds since epoch) */
 	struct arch_flags arch_flags;	/* architecture identification flags */
-	unsigned char unused[3944];	/* must be zero */
+	/* fields utilizing space that was unused prior to version 1.3 */
+	uint64_t offset;	/* offset of data part in the lot, as of 1.3 */
+	uint64_t size;		/* size of data mapping in the lot, as of 1.3 */
+	uint64_t poolsize;	/* size of a pool in the lot, as of 1.3 */
+	unsigned char unused[3920];	/* must be zero */
 	uint64_t checksum;		/* checksum of above fields */
 };
 
