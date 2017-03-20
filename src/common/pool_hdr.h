@@ -110,7 +110,8 @@ struct pool_hdr {
 	uint64_t offset;	/* offset of data part in the lot, as of 1.3 */
 	uint64_t size;		/* size of data mapping in the lot, as of 1.3 */
 	uint64_t poolsize;	/* size of a pool in the lot, as of 1.3 */
-	unsigned char unused[3920];	/* must be zero */
+	uint32_t alignment;	/* data alignment, as of 1.3 */
+	unsigned char unused[3916];	/* must be zero */
 	uint64_t checksum;		/* checksum of above fields */
 };
 
