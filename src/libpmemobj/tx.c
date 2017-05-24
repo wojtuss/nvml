@@ -62,16 +62,90 @@ struct tx {
 	void *stage_callback_arg;
 };
 
+#define TX_STACK_MAX 100
+
+/*
+ * tx_stack -- a stack for nested transactions
+ */
+struct tx_stack {
+	struct tx *stack[TX_STACK_MAX];
+	int size;
+};
+
+static __thread struct tx_stack tx_stack;
+
+/*
+ * tx_stack_push -- (internal) push a transaction on a stack
+ */
+static int
+tx_stack_push(struct tx *tx)
+{
+	LOG(3, "tx %p", tx);
+	if (tx_stack.size < TX_STACK_MAX) {
+		tx_stack.stack[tx_stack.size++] = tx;
+		return 0;
+	} else {
+		ERR("!tx_stack overflow");
+		return -1;
+	}
+}
+
+/*
+ * tx_stack_pop -- (internal) pop a transaction from the top of a stack
+ */
+static void
+tx_stack_pop(void)
+{
+	LOG(3, NULL);
+	if (tx_stack.size > 1) {
+		tx_stack.size--;
+		Free(tx_stack.stack[tx_stack.size]);
+		tx_stack.stack[tx_stack.size] = NULL;
+	} else {
+		LOG(4, "tx_stack empty");
+	}
+}
+
+/*
+ * tx_stack_top -- (internal) get a transaction form the top of a stack
+ */
+static struct tx *
+tx_stack_top(void)
+{
+	LOG(3, NULL);
+	return tx_stack.size > 0 ? tx_stack.stack[tx_stack.size - 1] : NULL;
+}
+
+/*
+ * create_tx -- (internal) create an instance of the tx structure
+ */
+static struct tx *
+create_tx(void)
+{
+	LOG(3, NULL);
+	struct tx *tx = Zalloc(sizeof(struct tx));
+	if (tx == NULL)
+		ERR("!Zalloc for tx");
+
+	return tx;
+}
+
 /*
  * get_tx -- (internal) returns current transaction
  *
  * This function should be used only in high-level functions.
  */
 static struct tx *
-get_tx()
+get_tx(void)
 {
-	static __thread struct tx tx;
-	return &tx;
+	LOG(3, NULL);
+	static __thread struct tx tx0;
+	struct tx *tx = tx_stack_top();
+	if (!tx) {
+		tx = &tx0;
+		tx_stack_push(tx);
+	}
+	return tx;
 }
 
 struct tx_lock_data {
@@ -1126,14 +1200,24 @@ pmemobj_tx_begin(PMEMobjpool *pop, jmp_buf env, ...)
 	int err = 0;
 	struct tx *tx = get_tx();
 
+	printf("tx %p\n", tx);
+	printf("pop %p\n", pop);
+
+//	if (!pop) {
+//		ERR("NULL pop");
+//		return obj_tx_abort_err(EINVAL);
+//	}
+
+	if (tx->pop != pop) {
+		printf("nested transaction for a different pool\n");
+		LOG(2, "nested transaction for a different pool");
+		tx = create_tx();
+		tx_stack_push(tx);
+	}
+
 	struct lane_tx_runtime *lane = NULL;
 	if (tx->stage == TX_STAGE_WORK) {
 		ASSERTne(tx->section, NULL);
-		if (tx->pop != pop) {
-			ERR("nested transaction for different pool");
-			return obj_tx_abort_err(EINVAL);
-		}
-
 		VALGRIND_START_TX;
 	} else if (tx->stage == TX_STAGE_NONE) {
 		VALGRIND_START_TX;
@@ -1492,7 +1576,10 @@ pmemobj_tx_end(void)
 			obj_tx_abort(tx->last_errnum, 0);
 	}
 
-	return tx->last_errnum;
+	int last_errnum = tx->last_errnum;
+	tx_stack_pop();
+
+	return last_errnum;
 }
 
 /*
