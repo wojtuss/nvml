@@ -528,15 +528,6 @@ test_tx_api(PMEMobjpool *pop)
 		UT_ASSERT(errno == EFAULT);
 	} TX_END
 
-	errno = 0;
-	TX_BEGIN(pop) {
-		TX_BEGIN((PMEMobjpool *)(uintptr_t)7) {
-		} TX_ONCOMMIT {
-			UT_ASSERT(0);
-		} TX_END
-		UT_ASSERT(errno == EINVAL);
-	} TX_END
-
 	UT_OUT("%s", pmemobj_errormsg());
 	TX_BEGIN(pop) {
 		pmemobj_tx_abort(ECANCELED);

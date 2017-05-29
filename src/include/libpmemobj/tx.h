@@ -221,6 +221,9 @@ TX_MEMSET(void *dest, int c, size_t num)
 	return memset(dest, c, num);
 }
 
+void tx_stack_init(void);
+void tx_stack_fini(void);
+
 #ifdef __cplusplus
 }
 #endif

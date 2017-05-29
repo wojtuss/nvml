@@ -36,6 +36,7 @@
 
 #include <inttypes.h>
 #include <wchar.h>
+#include <pthread.h>
 
 #include "queue.h"
 #include "ctree.h"
@@ -62,48 +63,137 @@ struct tx {
 	void *stage_callback_arg;
 };
 
-#define TX_STACK_MAX 100
-
 /*
  * tx_stack -- a stack for nested transactions
  */
 struct tx_stack {
-	struct tx *stack[TX_STACK_MAX];
-	int size;
+	unsigned size;
+	struct tx tx[];
 };
 
-static __thread struct tx_stack tx_stack;
+static pthread_key_t tx_stack_key;
+static pthread_once_t tx_stack_once = PTHREAD_ONCE_INIT;
+
+/*
+ * tx_stack_alloc -- (internal) allocate memory for a transaction stack with
+ *                   one transaction
+ */
+static struct tx_stack *
+tx_stack_alloc(void)
+{
+	struct tx_stack *stack = Zalloc(sizeof(struct tx_stack)
+			+ sizeof(struct tx));
+	if (!stack)
+		FATAL("!Zalloc for tx");
+
+	return stack;
+}
+
+/*
+ * _tx_stack_init -- (internal) create a pthread key for the transaction stack
+ */
+static void
+tx_stack_create_key(void)
+{
+	int result = pthread_key_create(&tx_stack_key, Free);
+	if (result) {
+		errno = result;
+		FATAL("!pthread_key_create");
+	}
+	VALGRIND_ANNOTATE_HAPPENS_BEFORE(&tx_stack_once);
+}
+
+/*
+ * tx_stack_init -- initialize the transaction stack
+ */
+void
+tx_stack_init(void)
+{
+	int result = pthread_once(&tx_stack_once, tx_stack_create_key);
+	if (result) {
+		errno = result;
+		FATAL("!pthread_once");
+	}
+
+	/*
+	 * Workaround Helgrind's bug:
+	 * https://bugs.kde.org/show_bug.cgi?id=337735
+	 */
+	VALGRIND_ANNOTATE_HAPPENS_AFTER(&tx_stack_once);
+
+	struct tx_stack *stack = pthread_getspecific(tx_stack_key);
+	ASSERTeq(stack, NULL);
+	stack = tx_stack_alloc();
+	stack->size = 1;
+	result = pthread_setspecific(tx_stack_key, stack);
+	if (result) {
+		errno = result;
+		FATAL("!pthread_setspecific");
+	}
+}
+
+/*
+ * tx_stack_fini -- destroy the transaction stack
+ */
+void
+tx_stack_fini(void)
+{
+	void *stack = pthread_getspecific(tx_stack_key);
+	if (stack) {
+		Free(stack);
+		(void) pthread_setspecific(tx_stack_key, NULL);
+	}
+}
 
 /*
  * tx_stack_push -- (internal) push a transaction on a stack
  */
 static int
-tx_stack_push(struct tx *tx)
+tx_stack_push_new(void)
 {
-	LOG(3, "tx %p", tx);
-	if (tx_stack.size < TX_STACK_MAX) {
-		tx_stack.stack[tx_stack.size++] = tx;
-		return 0;
-	} else {
-		ERR("!tx_stack overflow");
+	LOG(3, NULL);
+	struct tx_stack *stack = pthread_getspecific(tx_stack_key);
+	ASSERTne(stack, NULL);
+	stack = Realloc(stack, sizeof(struct tx_stack)
+			+ (stack->size + 1) * sizeof(struct tx));
+	if (!stack) {
+		ERR("!Realloc");
 		return -1;
 	}
+	memset(&stack->tx[stack->size], 0, sizeof(struct tx));
+	int result = pthread_setspecific(tx_stack_key, stack);
+	if (result) {
+		errno = result;
+		ERR("!pthread_setspecific");
+		return -1;
+	}
+	stack->size++;
+	return 0;
 }
 
 /*
  * tx_stack_pop -- (internal) pop a transaction from the top of a stack
  */
-static void
+static int
 tx_stack_pop(void)
 {
 	LOG(3, NULL);
-	if (tx_stack.size > 1) {
-		tx_stack.size--;
-		Free(tx_stack.stack[tx_stack.size]);
-		tx_stack.stack[tx_stack.size] = NULL;
+	struct tx_stack *stack = pthread_getspecific(tx_stack_key);
+	ASSERTne(stack, NULL);
+	if (stack->size > 1) {
+		stack->size--;
+		stack = Realloc(stack, sizeof(struct tx_stack)
+				+ (stack->size) * sizeof(struct tx));
+		int result = pthread_setspecific(tx_stack_key, stack);
+		if (result) {
+			errno = result;
+			ERR("!pthread_setspecific");
+			return -1;
+		}
 	} else {
-		LOG(4, "tx_stack empty");
+		LOG(4, "the only tx on the tx_stack cannot be taken off");
 	}
+	return 0;
 }
 
 /*
@@ -113,21 +203,10 @@ static struct tx *
 tx_stack_top(void)
 {
 	LOG(3, NULL);
-	return tx_stack.size > 0 ? tx_stack.stack[tx_stack.size - 1] : NULL;
-}
-
-/*
- * create_tx -- (internal) create an instance of the tx structure
- */
-static struct tx *
-create_tx(void)
-{
-	LOG(3, NULL);
-	struct tx *tx = Zalloc(sizeof(struct tx));
-	if (tx == NULL)
-		ERR("!Zalloc for tx");
-
-	return tx;
+	struct tx_stack *stack = pthread_getspecific(tx_stack_key);
+	ASSERTne(stack, NULL);
+	ASSERT(stack->size > 0);
+	return &stack->tx[stack->size - 1];
 }
 
 /*
@@ -139,13 +218,7 @@ static struct tx *
 get_tx(void)
 {
 	LOG(3, NULL);
-	static __thread struct tx tx0;
-	struct tx *tx = tx_stack_top();
-	if (!tx) {
-		tx = &tx0;
-		tx_stack_push(tx);
-	}
-	return tx;
+	return tx_stack_top();
 }
 
 struct tx_lock_data {
@@ -1200,19 +1273,23 @@ pmemobj_tx_begin(PMEMobjpool *pop, jmp_buf env, ...)
 	int err = 0;
 	struct tx *tx = get_tx();
 
-	printf("tx %p\n", tx);
-	printf("pop %p\n", pop);
+	if (!pop) {
+		if (tx->pop == NULL) {
+			FATAL("NULL pop");
+		} else {
+			err = errno = EINVAL;
+			ERR("!NULL pop");
+			goto err_abort;
+		}
+	}
 
-//	if (!pop) {
-//		ERR("NULL pop");
-//		return obj_tx_abort_err(EINVAL);
-//	}
-
-	if (tx->pop != pop) {
-		printf("nested transaction for a different pool\n");
+	if (tx->pop != NULL && tx->pop != pop) {
 		LOG(2, "nested transaction for a different pool");
-		tx = create_tx();
-		tx_stack_push(tx);
+		if (tx_stack_push_new()) {
+			err = errno;
+			goto err_abort;
+		}
+		tx = get_tx();
 	}
 
 	struct lane_tx_runtime *lane = NULL;
@@ -1577,7 +1654,9 @@ pmemobj_tx_end(void)
 	}
 
 	int last_errnum = tx->last_errnum;
-	tx_stack_pop();
+
+	if (tx_stack_pop())
+		return errno;
 
 	return last_errnum;
 }
