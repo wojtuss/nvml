@@ -120,16 +120,6 @@ tx_stack_init(void)
 	 * https://bugs.kde.org/show_bug.cgi?id=337735
 	 */
 	VALGRIND_ANNOTATE_HAPPENS_AFTER(&tx_stack_once);
-
-	struct tx_stack *stack = pthread_getspecific(tx_stack_key);
-	ASSERTeq(stack, NULL);
-	stack = tx_stack_alloc();
-	stack->size = 1;
-	result = pthread_setspecific(tx_stack_key, stack);
-	if (result) {
-		errno = result;
-		FATAL("!pthread_setspecific");
-	}
 }
 
 /*
@@ -204,8 +194,15 @@ tx_stack_top(void)
 {
 	LOG(3, NULL);
 	struct tx_stack *stack = pthread_getspecific(tx_stack_key);
-	ASSERTne(stack, NULL);
-	ASSERT(stack->size > 0);
+	if (!stack) {
+		stack = tx_stack_alloc();
+		stack->size = 1;
+		int result = pthread_setspecific(tx_stack_key, stack);
+		if (result) {
+			errno = result;
+			FATAL("pthread_setspecific");
+		}
+	}
 	return &stack->tx[stack->size - 1];
 }
 

@@ -42,7 +42,6 @@ require_fs_type any
 
 setup
 
-#expect_normal_exit ./obj_async_postcommit$EXESUFFIX $DIR/testfile1
-expect_normal_exit gdbserver localhost:1234 ./obj_async_postcommit$EXESUFFIX $DIR/testfile1
+expect_normal_exit ./obj_async_postcommit$EXESUFFIX $DIR/testfile1
 
 pass
