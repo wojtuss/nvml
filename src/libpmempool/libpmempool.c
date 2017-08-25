@@ -38,6 +38,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <sys/param.h>
+#include <assert.h>
 
 #include "pmemcommon.h"
 #include "libpmempool.h"

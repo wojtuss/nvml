@@ -188,6 +188,7 @@ int util_is_poolset_file(const char *path);
 int util_poolset_foreach_part(const char *path,
 	int (*cb)(struct part_file *pf, void *arg), void *arg);
 size_t util_poolset_size(const char *path);
+unsigned util_poolset_count_parts(struct pool_set *set);
 
 int util_pool_create(struct pool_set **setp, const char *path, size_t poolsize,
 	size_t minsize, size_t minpartsize, const char *sig, uint32_t major,
@@ -254,8 +255,14 @@ int util_replica_close_local(struct pool_replica *rep, unsigned repn,
 int util_replica_close_remote(struct pool_replica *rep, unsigned repn,
 		enum del_parts_mode del);
 
+extern int (*Rpmem_persist_progress)(RPMEMpool *rpp, size_t offset,
+		size_t length, unsigned lane, const char *msg,
+		RPMEM_progress_cb progress_cb);
 extern int (*Rpmem_persist)(RPMEMpool *rpp, size_t offset, size_t length,
 								unsigned lane);
+extern int (*Rpmem_read_progress)(RPMEMpool *rpp, void *buff, size_t offset,
+		size_t length, unsigned lane, const char *msg,
+		RPMEM_progress_cb progress_cb);
 extern int (*Rpmem_read)(RPMEMpool *rpp, void *buff, size_t offset,
 				size_t length, unsigned lane);
 extern int (*Rpmem_close)(RPMEMpool *rpp);

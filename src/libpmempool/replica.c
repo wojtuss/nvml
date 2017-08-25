@@ -53,6 +53,7 @@
 #include "pool_hdr.h"
 #include "set.h"
 #include "util.h"
+#include "util_pmem.h"
 #include "uuid.h"
 
 /*
@@ -298,6 +299,25 @@ replica_find_unbroken_part(unsigned repn, struct poolset_health_status *set_hs)
 			return p;
 	}
 	return UNDEF_PART;
+}
+
+/*
+ * replica_count_broken_parts -- get the number of all broken parts in a poolset
+ */
+unsigned
+replica_count_broken_parts(struct pool_set *set,
+		struct poolset_health_status *set_hs, int local_only)
+{
+	unsigned n = 0;
+	for (unsigned r = 0; r < set->nreplicas; ++r) {
+		if (local_only && set->replica[r]->remote)
+			continue;
+		for (unsigned p = 0; p < set->replica[r]->nparts; ++p) {
+			if (replica_is_part_broken(r, p, set_hs))
+				++n;
+		}
+	}
+	return n;
 }
 
 /*
@@ -849,62 +869,97 @@ check_replica_sizes(struct pool_set *set, struct poolset_health_status *set_hs)
  */
 int
 replica_check_poolset_health(struct pool_set *set,
-		struct poolset_health_status **set_hsp, unsigned flags)
+		struct poolset_health_status **set_hsp, unsigned flags,
+		PMEM_progress_cb progress_cb)
 {
 	LOG(3, "set %p, set_hsp %p, flags %u", set, set_hsp, flags);
+
+	char *msg = "Checking poolset health";
+	size_t progress_max = 11;
+	if (progress_cb)
+		progress_cb(msg, 0, progress_max);
+
 	if (replica_create_poolset_health_status(set, set_hsp)) {
 		LOG(1, "creating poolset health status failed");
 		return -1;
 	}
+	if (progress_cb)
+		progress_cb(msg, 1, progress_max);
+
 
 	struct poolset_health_status *set_hs = *set_hsp;
 
 	/* check if part files exist, and if not - create them, and open them */
 	check_and_open_poolset_part_files(set, set_hs, flags);
+	if (progress_cb)
+		progress_cb(msg, 2, progress_max);
 
 	/* map all headers */
 	map_all_unbroken_headers(set, set_hs);
+	if (progress_cb)
+		progress_cb(msg, 3, progress_max);
+
 
 	/* check if checksums are correct for parts in all replicas */
 	check_checksums(set, set_hs);
+	if (progress_cb)
+		progress_cb(msg, 4, progress_max);
+
 
 	/* check if uuids in parts across each replica are consistent */
 	if (check_replicas_consistency(set, set_hs)) {
 		LOG(1, "replica consistency check failed");
 		goto err;
 	}
+	if (progress_cb)
+		progress_cb(msg, 5, progress_max);
+
 
 	/* check poolset_uuid values between replicas */
 	if (check_poolset_uuids(set, set_hs)) {
 		LOG(1, "poolset uuids check failed");
 		goto err;
 	}
+	if (progress_cb)
+		progress_cb(msg, 6, progress_max);
 
 	/* check if uuids for adjacent replicas are consistent */
 	if (check_uuids_between_replicas(set, set_hs)) {
 		LOG(1, "replica uuids check failed");
 		goto err;
 	}
+	if (progress_cb)
+		progress_cb(msg, 7, progress_max);
 
 	/* check if healthy replicas make up another poolset */
 	if (check_replica_cycles(set, set_hs)) {
 		LOG(1, "replica cycles check failed");
 		goto err;
 	}
+	if (progress_cb)
+		progress_cb(msg, 8, progress_max);
 
 	/* check if replicas are large enough */
 	if (check_replica_sizes(set, set_hs)) {
 		LOG(1, "replica sizes check failed");
 		goto err;
 	}
+	if (progress_cb)
+		progress_cb(msg, 9, progress_max);
+
 
 	if (check_store_all_sizes(set, set_hs)) {
 		LOG(1, "reading pool sizes failed");
 		goto err;
 	}
+	if (progress_cb)
+		progress_cb(msg, 10, progress_max);
 
 	unmap_all_headers(set);
 	util_poolset_fdclose(set);
+	if (progress_cb)
+		progress_cb(msg, 11, progress_max);
+
 	return 0;
 
 err:
@@ -1073,15 +1128,52 @@ err:
 }
 
 /*
- * pmempool_syncU -- synchronize replicas within a poolset
+ * replica_memcpy_persist -- copy and persist data and report progress of the
+ *                           operation
+ */
+void
+replica_memcpy_persist(int is_pmem, void *to, const void *from, size_t size,
+		const char *msg, PMEM_progress_cb progress_cb)
+{
+	LOG(3, "to %p, from %p, size %zu, msg %s, progress_cb %p", to, from,
+			size, msg, progress_cb);
+
+	if (progress_cb == NULL) {
+		memcpy(to, from, size);
+		util_persist(is_pmem, to, size);
+	} else {
+		if (msg == NULL || *msg == '\0')
+			msg = "Copying data";
+
+		size_t off = 0;
+		size_t next_off = 0;
+
+		progress_cb(msg, 0, size);
+		for (unsigned i = 0; i < 100; ++i) {
+			next_off = (size * (i + 1) + 99) / 100;
+			memcpy(ADDR_SUM(to, off), ADDR_SUM(from, off),
+					next_off - off);
+			util_persist(is_pmem, ADDR_SUM(to, off),
+					next_off - off);
+			progress_cb(msg, next_off, size);
+			off = next_off;
+		}
+	}
+}
+
+/*
+ * pmempool_sync_progressU -- synchronize replicas within a poolset with
+ *                           reporting progress of the operation
  */
 #ifndef _WIN32
 static inline
 #endif
 int
-pmempool_syncU(const char *poolset, unsigned flags)
+pmempool_sync_progressU(const char *poolset, unsigned flags,
+		PMEM_progress_cb progress_cb)
 {
-	LOG(3, "poolset %s, flags %u", poolset, flags);
+	LOG(3, "poolset %s, flags %u, progress_cb %p", poolset, flags,
+			progress_cb);
 	ASSERTne(poolset, NULL);
 
 	/* check if poolset has correct signature */
@@ -1117,7 +1209,7 @@ pmempool_syncU(const char *poolset, unsigned flags)
 	}
 
 	/* sync all replicas */
-	if (replica_sync(set, NULL, flags)) {
+	if (replica_sync(set, NULL, flags, progress_cb)) {
 		LOG(1, "synchronization failed");
 		goto err_close_all;
 	}
@@ -1137,7 +1229,55 @@ err:
 		errno = EINVAL;
 
 	return -1;
+
 }
+
+/*
+ * pmempool_syncU -- synchronize replicas within a poolset
+ */
+#ifndef _WIN32
+static inline
+#endif
+int
+pmempool_syncU(const char *poolset, unsigned flags)
+{
+	LOG(3, "poolset %s, flags %u", poolset, flags);
+
+	return pmempool_sync_progressU(poolset, flags, NULL);
+}
+
+#ifndef _WIN32
+/*
+ * pmempool_sync_progress -- synchronize replicas within a poolset and report
+ *                          progress of the operation
+ */
+int
+pmempool_sync_progress(const char *poolset, unsigned flags,
+		PMEM_progress_cb progress_cb)
+{
+	return pmempool_sync_progressU(poolset, flags, progress_cb);
+}
+#else
+/*
+ * pmempool_syncW -- synchronize replicas within a poolset in widechar and
+ *                   report progress of the operation
+ */
+int
+pmempool_sync_progressW(const wchar_t *poolset, unsigned flags,
+		PMEM_progress_cb progress_cb)
+{
+	char *path = util_toUTF8(poolset);
+	if (path == NULL) {
+		ERR("Invalid poolest file path.");
+		return -1;
+	}
+
+	int ret = pmempool_sync_progressU(path, flags, progress_cb);
+
+	util_free_UTF8(path);
+	return ret;
+}
+#endif
 
 #ifndef _WIN32
 /*
@@ -1169,17 +1309,18 @@ pmempool_syncW(const wchar_t *poolset, unsigned flags)
 #endif
 
 /*
- * pmempool_transformU -- alter poolset structure
+ * pmempool_transform_progressU -- alter poolset structure and report progress
+ *                                of the operation
  */
 #ifndef _WIN32
 static inline
 #endif
 int
-pmempool_transformU(const char *poolset_src,
-		const char *poolset_dst, unsigned flags)
+pmempool_transform_progressU(const char *poolset_src, const char *poolset_dst,
+		unsigned flags, PMEM_progress_cb progress_cb)
 {
-	LOG(3, "poolset_src %s, poolset_dst %s, flags %u", poolset_src,
-			poolset_dst, flags);
+	LOG(3, "poolset_src %s, poolset_dst %s, flags %u, progress_cb %p",
+			poolset_src, poolset_dst, flags, progress_cb);
 	ASSERTne(poolset_src, NULL);
 	ASSERTne(poolset_dst, NULL);
 
@@ -1255,7 +1396,7 @@ pmempool_transformU(const char *poolset_src,
 	del = is_dry_run(flags) ? DO_NOT_DELETE_PARTS : DELETE_CREATED_PARTS;
 
 	/* transform poolset */
-	if (replica_transform(set_in, set_out, flags)) {
+	if (replica_transform(set_in, set_out, flags, progress_cb)) {
 		ERR("transformation failed");
 		goto err_free_poolout;
 	}
@@ -1276,6 +1417,67 @@ err:
 
 	return -1;
 }
+
+/*
+ * pmempool_transformU -- alter poolset structure
+ */
+#ifndef _WIN32
+static inline
+#endif
+int
+pmempool_transformU(const char *poolset_src, const char *poolset_dst,
+		unsigned flags)
+{
+	LOG(3, "poolset_src %s, poolset_dst %s, flags %u",
+			poolset_src, poolset_dst, flags);
+
+	return pmempool_transform_progressU(poolset_src, poolset_dst, flags,
+			NULL);
+}
+
+#ifndef _WIN32
+/*
+ * pmempool_transform_progress -- alter poolset structure and report progress
+ *                               of the operation
+ */
+int
+pmempool_transform_progress(const char *poolset_src, const char *poolset_dst,
+		unsigned flags, PMEM_progress_cb progress_cb)
+{
+	return pmempool_transform_progressU(poolset_src, poolset_dst, flags,
+			progress_cb);
+}
+#else
+/*
+ * pmempool_transform_progressW -- alter poolset structure in widechar and
+ *                                 report progress of the operation
+ */
+int
+pmempool_transform_progressW(const wchar_t *poolset_src,
+	const wchar_t *poolset_dst, unsigned flags,
+	PMEM_progress_cb progress_cb)
+{
+	char *path_src = util_toUTF8(poolset_src);
+	if (path_src == NULL) {
+		ERR("Invalid source poolest file path.");
+		return -1;
+	}
+
+	char *path_dst = util_toUTF8(poolset_dst);
+	if (path_dst == NULL) {
+		ERR("Invalid destination poolest file path.");
+		Free(path_src);
+		return -1;
+	}
+
+	int ret = pmempool_transform_progressU(path_src, path_dst, flags,
+			progress_cb);
+
+	util_free_UTF8(path_src);
+	util_free_UTF8(path_dst);
+	return ret;
+}
+#endif
 
 #ifndef _WIN32
 /*

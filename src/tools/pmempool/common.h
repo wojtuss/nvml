@@ -61,6 +61,15 @@
 #include "srcversion.h"
 #endif
 
+#define PMEMPOOL_PROGRESS_VAR "PMEMPOOL_PROGRESS"
+
+/*
+ * a callback function for reporting progress of an operation
+ *
+ * Expected behavior: passing NULL as msg cancels the current progress report
+ */
+typedef int (*PMEMPOOL_progress_cb)(const char *msg, size_t curr, size_t total);
+
 #define COUNT_OF(x) (sizeof(x) / sizeof(0[x]))
 
 #define OPT_SHIFT 12
@@ -238,3 +247,8 @@ static const struct range ENTIRE_UINT64 = {
 	0,		/* first */
 	UINT64_MAX	/* last */
 };
+
+void pmempool_progress_init(void);
+void pmempool_progress_enable(void);
+PMEMPOOL_progress_cb pmempool_get_progress_cb(void);
+int pmempool_progress_cb(const char *msg, size_t curr, size_t total);

@@ -255,6 +255,7 @@ main(int argc, char *argv[])
 	}
 #endif
 	util_init();
+	pmempool_progress_init();
 
 #ifndef _WIN32
 	util_remote_init();

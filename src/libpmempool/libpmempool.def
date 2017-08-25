@@ -46,8 +46,12 @@ EXPORTS
 	pmempool_checkU
 	pmempool_checkW
 	pmempool_check_end
+	pmempool_sync_progressU
+	pmempool_sync_progressW
 	pmempool_syncU
 	pmempool_syncW
+	pmempool_transform_progressU
+	pmempool_transform_progressW
 	pmempool_transformU
 	pmempool_transformW
 	pmempool_rmU

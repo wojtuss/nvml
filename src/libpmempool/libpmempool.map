@@ -1,5 +1,5 @@
 #
-# Copyright 2016, Intel Corporation
+# Copyright 2016-2017, Intel Corporation
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -40,7 +40,9 @@ LIBPMEMPOOL_1.0 {
 		pmempool_check;
 		pmempool_check_end;
 		pmempool_transform;
+		pmempool_transform_progress;
 		pmempool_sync;
+		pmempool_sync_progress;
 		pmempool_rm;
 	local:
 		*;
