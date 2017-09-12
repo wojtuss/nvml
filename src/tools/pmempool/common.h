@@ -69,6 +69,7 @@
  * Expected behavior: passing NULL as msg cancels the current progress report
  */
 typedef int (*PMEMPOOL_progress_cb)(const char *msg, size_t curr, size_t total);
+extern PMEMPOOL_progress_cb Pmempool_progress_cb;
 
 #define COUNT_OF(x) (sizeof(x) / sizeof(0[x]))
 
@@ -250,5 +251,4 @@ static const struct range ENTIRE_UINT64 = {
 
 void pmempool_progress_init(void);
 void pmempool_progress_enable(void);
-PMEMPOOL_progress_cb pmempool_get_progress_cb(void);
 int pmempool_progress_cb(const char *msg, size_t curr, size_t total);

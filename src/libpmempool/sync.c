@@ -101,8 +101,8 @@ recreate_broken_parts(struct pool_set *set,
 	LOG(3, "set %p, set_hs %p, flags %u", set, set_hs, flags);
 
 	char *msg = "(Re)creating parts";
-	unsigned n = 0;
-	unsigned max = replica_count_broken_parts(set, set_hs, 1);
+	size_t n = 0;
+	size_t max = replica_count_broken_parts(set, set_hs, 1);
 
 	for (unsigned r = 0; r < set_hs->nreplicas; ++r) {
 		if (set->replica[r]->remote)
@@ -116,7 +116,7 @@ recreate_broken_parts(struct pool_set *set,
 				continue;
 
 			if (progress_cb)
-				progress_cb(msg, (size_t)n++, (size_t)max);
+				progress_cb(msg, n++, max);
 
 			/* remove parts from broken replica */
 			if (!is_dry_run(flags)) {
@@ -138,7 +138,7 @@ recreate_broken_parts(struct pool_set *set,
 	}
 
 	if (progress_cb)
-		progress_cb(msg, (size_t)max, (size_t)max);
+		progress_cb(msg, max, max);
 
 	return 0;
 }
@@ -295,8 +295,8 @@ create_headers_for_broken_parts(struct pool_set *set, unsigned src_replica,
 	struct pool_hdr *src_hdr = HDR(REP(set, src_replica), 0);
 
 	char *msg = "(Re)creating headers";
-	unsigned n = 0;
-	unsigned max = replica_count_broken_parts(set, set_hs, 0);
+	size_t n = 0;
+	size_t max = replica_count_broken_parts(set, set_hs, 0);
 
 	for (unsigned r = 0; r < set_hs->nreplicas; ++r) {
 		/* skip unbroken replicas */
@@ -377,12 +377,13 @@ copy_data_to_broken_parts(struct pool_set *set, unsigned healthy_replica,
 			size_t fpoff = (p == 0) ? POOL_HDR_SIZE : 0;
 			void *dst_addr = ADDR_SUM(part->addr, fpoff);
 
-			char msg[100] = {0};
+			const size_t buff_len = 60;
+			char msg[buff_len];
 
 			if (rep->remote) {
 				if (progress_cb) {
-					sprintf(msg, "Copying data to remote "
-						"replica %u", r);
+					snprintf(msg, buff_len, "Copying data "
+						"to remote replica %u", r);
 				}
 				int ret = Rpmem_persist_progress(
 					rep->remote->rpp, off - POOL_HDR_SIZE,
@@ -396,8 +397,9 @@ copy_data_to_broken_parts(struct pool_set *set, unsigned healthy_replica,
 				}
 			} else if (rep_h->remote) {
 				if (progress_cb) {
-					sprintf(msg, "Copying data to part "
-						"%u in replica %u", p, r);
+					snprintf(msg, buff_len, "Copying data "
+						"to part %u in replica %u", p,
+						r);
 				}
 				int ret = Rpmem_read_progress(
 					rep_h->remote->rpp, dst_addr,
@@ -418,8 +420,9 @@ copy_data_to_broken_parts(struct pool_set *set, unsigned healthy_replica,
 					ADDR_SUM(rep_h->part[0].addr, off);
 
 				if (progress_cb) {
-					sprintf(msg, "Copying data to part "
-						"%u in replica %u", p, r);
+					snprintf(msg, buff_len, "Copying data "
+						"to part %u in replica %u", p,
+						r);
 				}
 
 				/* copy all data */

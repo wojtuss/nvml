@@ -41,7 +41,6 @@
 #include <endian.h>
 #include <errno.h>
 #include <time.h>
-#include <assert.h>
 
 #include "util.h"
 #include "valgrind_internal.h"

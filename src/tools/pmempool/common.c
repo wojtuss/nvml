@@ -69,7 +69,7 @@
 #define REQ_BUFF_SIZE	2048U
 #define Q_BUFF_SIZE	8192
 
-static PMEMPOOL_progress_cb Pmempool_progress_cb;
+PMEMPOOL_progress_cb Pmempool_progress_cb;
 
 typedef const char *(*enum_to_str_fn)(int);
 
@@ -1413,8 +1413,6 @@ pmempool_progress_init(void)
 {
 	LOG(3, NULL);
 
-	CHECK_FUNC_COMPATIBLE(pmempool_progress_cb, *Pmempool_progress_cb);
-
 	char *progress = os_getenv(PMEMPOOL_PROGRESS_VAR);
 	if (progress && strcmp(progress, "1") == 0) {
 		LOG(3, "%s set to 1", PMEMPOOL_PROGRESS_VAR);
@@ -1430,13 +1428,6 @@ pmempool_progress_enable(void)
 {
 	LOG(3, NULL);
 	Pmempool_progress_cb = &pmempool_progress_cb;
-}
-
-PMEMPOOL_progress_cb
-pmempool_get_progress_cb(void)
-{
-	LOG(3, NULL);
-	return Pmempool_progress_cb;
 }
 
 /*
