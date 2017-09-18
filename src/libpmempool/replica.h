@@ -127,8 +127,13 @@ int replica_check_part_dirs(struct pool_set *set);
 int replica_check_local_part_dir(struct pool_set *set, unsigned repn,
 		unsigned partn);
 
-void replica_memcpy_persist(int is_pmem, void *to, const void *from,
+void util_memcpy_persist(int is_pmem, void *to, const void *from,
 		size_t size, const char *msg, PMEM_progress_cb progress_cb);
+int util_rpmem_read(RPMEMpool *rpp, void *buff, size_t offset, size_t length,
+		unsigned lane, const char *msg, PMEM_progress_cb progress_cb);
+
+int util_rpmem_persist(RPMEMpool *rpp, size_t offset, size_t length,
+		unsigned lane, const char *msg, RPMEM_progress_cb progress_cb);
 
 int replica_open_replica_part_files(struct pool_set *set, unsigned repn);
 int replica_open_poolset_part_files(struct pool_set *set);

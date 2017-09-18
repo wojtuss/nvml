@@ -385,7 +385,7 @@ copy_data_to_broken_parts(struct pool_set *set, unsigned healthy_replica,
 					snprintf(msg, buff_len, "Copying data "
 						"to remote replica %u", r);
 				}
-				int ret = Rpmem_persist_progress(
+				int ret = util_rpmem_persist(
 					rep->remote->rpp, off - POOL_HDR_SIZE,
 					len, 0, msg, progress_cb);
 				if (ret) {
@@ -401,7 +401,7 @@ copy_data_to_broken_parts(struct pool_set *set, unsigned healthy_replica,
 						"to part %u in replica %u", p,
 						r);
 				}
-				int ret = Rpmem_read_progress(
+				int ret = util_rpmem_read(
 					rep_h->remote->rpp, dst_addr,
 					off - POOL_HDR_SIZE, len, 0, msg,
 					progress_cb);
@@ -426,7 +426,7 @@ copy_data_to_broken_parts(struct pool_set *set, unsigned healthy_replica,
 				}
 
 				/* copy all data */
-				replica_memcpy_persist(part->is_dev_dax,
+				util_memcpy_persist(part->is_dev_dax,
 						dst_addr, src_addr, len, msg,
 						progress_cb);
 			}

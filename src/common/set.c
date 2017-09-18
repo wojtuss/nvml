@@ -79,15 +79,10 @@ static RPMEMpool *(*Rpmem_open)(const char *target, const char *pool_set_name,
 			void *pool_addr, size_t pool_size, unsigned *nlanes,
 			struct rpmem_pool_attr *rpmem_attr);
 int (*Rpmem_close)(RPMEMpool *rpp);
-int (*Rpmem_persist_progress)(RPMEMpool *rpp, size_t offset, size_t length,
-		unsigned lane, const char *msg, RPMEM_progress_cb progress_cb);
 int (*Rpmem_persist)(RPMEMpool *rpp, size_t offset, size_t length,
 		unsigned lane);
-int (*Rpmem_read_progress)(RPMEMpool *rpp, void *buff, size_t offset,
-		size_t length, unsigned lane, const char *msg,
-		RPMEM_progress_cb progress_cb);
-int (*Rpmem_read)(RPMEMpool *rpp, void *buff, size_t offset,
-		size_t length, unsigned lane);
+int (*Rpmem_read)(RPMEMpool *rpp, void *buff, size_t offset, size_t length,
+		unsigned lane);
 int (*Rpmem_remove)(const char *target, const char *pool_set_name, int flags);
 int (*Rpmem_set_attr)(RPMEMpool *rpp, const struct rpmem_pool_attr *attr);
 
@@ -154,9 +149,7 @@ util_remote_unload_core(void)
 	Rpmem_create = NULL;
 	Rpmem_open = NULL;
 	Rpmem_close = NULL;
-	Rpmem_persist_progress = NULL;
 	Rpmem_persist = NULL;
-	Rpmem_read_progress = NULL;
 	Rpmem_read = NULL;
 	Rpmem_remove = NULL;
 	Rpmem_set_attr = NULL;
@@ -207,9 +200,7 @@ util_remote_load(void)
 	CHECK_FUNC_COMPATIBLE(rpmem_open, *Rpmem_open);
 	CHECK_FUNC_COMPATIBLE(rpmem_close, *Rpmem_close);
 	CHECK_FUNC_COMPATIBLE(rpmem_persist, *Rpmem_persist);
-	CHECK_FUNC_COMPATIBLE(rpmem_persist_progress, *Rpmem_persist_progress);
 	CHECK_FUNC_COMPATIBLE(rpmem_read, *Rpmem_read);
-	CHECK_FUNC_COMPATIBLE(rpmem_read_progress, *Rpmem_read_progress);
 	CHECK_FUNC_COMPATIBLE(rpmem_remove, *Rpmem_remove);
 
 	util_mutex_lock(&Remote_lock);
@@ -243,23 +234,9 @@ util_remote_load(void)
 		goto err;
 	}
 
-	Rpmem_persist_progress = util_dlsym(Rpmem_handle_remote,
-			"rpmem_persist_progress");
-	if (util_dl_check_error(Rpmem_persist_progress, "dlsym")) {
-		ERR("symbol 'rpmem_persist_progress' not found");
-		goto err;
-	}
-
 	Rpmem_persist = util_dlsym(Rpmem_handle_remote, "rpmem_persist");
 	if (util_dl_check_error(Rpmem_persist, "dlsym")) {
 		ERR("symbol 'rpmem_persist' not found");
-		goto err;
-	}
-
-	Rpmem_read_progress = util_dlsym(Rpmem_handle_remote,
-			"rpmem_read_progress");
-	if (util_dl_check_error(Rpmem_read_progress, "dlsym")) {
-		ERR("symbol 'rpmem_read_progress' not found");
 		goto err;
 	}
 

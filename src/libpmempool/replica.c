@@ -1128,11 +1128,11 @@ err:
 }
 
 /*
- * replica_memcpy_persist -- copy and persist data and report progress of the
- *                           operation
+ * util_memcpy_persist -- copy and persist data and report progress of the
+ *                        operation
  */
 void
-replica_memcpy_persist(int is_pmem, void *to, const void *from, size_t size,
+util_memcpy_persist(int is_pmem, void *to, const void *from, size_t size,
 		const char *msg, PMEM_progress_cb progress_cb)
 {
 	LOG(3, "to %p, from %p, size %zu, msg %s, progress_cb %p", to, from,
@@ -1160,6 +1160,47 @@ replica_memcpy_persist(int is_pmem, void *to, const void *from, size_t size,
 		}
 	}
 }
+
+int
+util_rpmem_read(RPMEMpool *rpp, void *buff, size_t offset, size_t length,
+		unsigned lane, const char *msg, PMEM_progress_cb progress_cb)
+{
+
+}
+
+int
+util_rpmem_persist(RPMEMpool *rpp, size_t offset, size_t length,
+		unsigned lane, const char *msg, RPMEM_progress_cb progress_cb)
+{
+	int ret = 0;
+
+	if (progress_cb == NULL) {
+		ret = Rpmem_persist(rpp, offset, length, lane);
+	} else {
+		if (msg == NULL || *msg == '\0')
+			msg = "Persisting data";
+
+		size_t off = 0;
+		size_t next_off = 0;
+
+		progress_cb(msg, 0, length);
+		for (unsigned i = 0; i < 100; ++i) {
+			next_off = (length * (i + 1) + 99) / 100;
+			ret = Rpmem_persist(rpp->fip, offset + off,
+					next_off - off, lane);
+			if (unlikely(ret)) {
+				progress_cb(NULL, 0, 0);
+				break;
+			} else {
+				progress_cb(msg, next_off, length);
+			}
+			off = next_off;
+		}
+	}
+
+}
+
+
 
 /*
  * pmempool_sync_progressU -- synchronize replicas within a poolset with
