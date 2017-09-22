@@ -63,14 +63,6 @@
 
 #define PMEMPOOL_PROGRESS_VAR "PMEMPOOL_PROGRESS"
 
-/*
- * a callback function for reporting progress of an operation
- *
- * Expected behavior: passing NULL as msg cancels the current progress report
- */
-typedef int (*PMEMPOOL_progress_cb)(const char *msg, size_t curr, size_t total);
-extern PMEMPOOL_progress_cb Pmempool_progress_cb;
-
 #define COUNT_OF(x) (sizeof(x) / sizeof(0[x]))
 
 #define OPT_SHIFT 12

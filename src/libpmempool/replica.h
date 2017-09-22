@@ -110,8 +110,8 @@ int replica_is_part_broken(unsigned repn, unsigned partn,
 		struct poolset_health_status *set_hs);
 unsigned replica_find_unbroken_part(unsigned repn,
 		struct poolset_health_status *set_hs);
-unsigned replica_count_broken_parts(struct pool_set *set,
-		struct poolset_health_status *set_hs, int local_only);
+unsigned poolset_count_broken_parts(struct pool_set *set,
+		struct poolset_health_status *set_hs, int localization);
 int replica_is_replica_broken(unsigned repn,
 		struct poolset_health_status *set_hs);
 int replica_is_replica_consistent(unsigned repn,

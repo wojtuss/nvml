@@ -821,6 +821,7 @@ util_parse_add_part(struct pool_set *set, const char *path, size_t filesize)
 	set->replica[set->nreplicas - 1] = rep;
 
 	unsigned p = rep->nparts++;
+	set->nparts++;
 
 	rep->part[p].path = path;
 	rep->part[p].filesize = filesize;
@@ -1200,6 +1201,7 @@ util_poolset_single(const char *path, size_t filesize, int create)
 	ASSERTne(rep->part[0].alignment, 0);
 
 	rep->nparts = 1;
+	set->nparts = 1;
 
 	/* it does not have a remote replica */
 	rep->remote = NULL;
@@ -3119,18 +3121,6 @@ util_poolset_size(const char *path)
 err_close:
 	os_close(fd);
 	return size;
-}
-
-/*
- * util_poolset_parts_no -- get total number of parts in a poolset
- */
-unsigned
-util_poolset_count_parts(struct pool_set *set)
-{
-	unsigned n = 0;
-	for (unsigned r = 0; r < set->nreplicas; ++r)
-		n += set->replica[r]->nparts;
-	return n;
 }
 
 /*

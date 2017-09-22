@@ -110,6 +110,7 @@ struct pool_replica {
 
 struct pool_set {
 	unsigned nreplicas;
+	unsigned nparts;	/* total number of parts in the poolset */
 	uuid_t uuid;
 	int rdonly;
 	int zeroed;		/* true if all the parts are new files */
@@ -188,7 +189,6 @@ int util_is_poolset_file(const char *path);
 int util_poolset_foreach_part(const char *path,
 	int (*cb)(struct part_file *pf, void *arg), void *arg);
 size_t util_poolset_size(const char *path);
-unsigned util_poolset_count_parts(struct pool_set *set);
 
 int util_pool_create(struct pool_set **setp, const char *path, size_t poolsize,
 	size_t minsize, size_t minpartsize, const char *sig, uint32_t major,

@@ -177,7 +177,7 @@ pmempool_transform_func(char *appname, int argc, char *argv[])
 		return ret;
 
 	ret = pmempool_transform_progress(ctx.poolset_file_src,
-			ctx.poolset_file_dst, ctx.flags, Pmempool_progress_cb);
+			ctx.poolset_file_dst, ctx.flags, pmempool_progress_cb);
 
 	if (ret) {
 		if (errno)

@@ -102,7 +102,7 @@ recreate_broken_parts(struct pool_set *set,
 
 	char *msg = "(Re)creating parts";
 	size_t n = 0;
-	size_t max = replica_count_broken_parts(set, set_hs, 1);
+	size_t max = poolset_count_broken_parts(set, set_hs, 1);
 
 	for (unsigned r = 0; r < set_hs->nreplicas; ++r) {
 		if (set->replica[r]->remote)
@@ -296,7 +296,7 @@ create_headers_for_broken_parts(struct pool_set *set, unsigned src_replica,
 
 	char *msg = "(Re)creating headers";
 	size_t n = 0;
-	size_t max = replica_count_broken_parts(set, set_hs, 0);
+	size_t max = poolset_count_broken_parts(set, set_hs, 0);
 
 	for (unsigned r = 0; r < set_hs->nreplicas; ++r) {
 		/* skip unbroken replicas */
@@ -742,15 +742,24 @@ open_remote_replicas(struct pool_set *set,
  */
 static int
 create_remote_replicas(struct pool_set *set,
-	struct poolset_health_status *set_hs, unsigned flags)
+	struct poolset_health_status *set_hs, unsigned flags,
+	PMEM_progress_cb progress_cb)
 {
 	LOG(3, "set %p, set_hs %p", set, set_hs);
+
+	char *msg = "(Re)creating remote replicas";
+	size_t n = 0;
+	size_t max = poolset_count_broken_parts(set, set_hs, 2);
+
 	for (unsigned r = 0; r < set->nreplicas; r++) {
 		struct pool_replica *rep = set->replica[r];
 		if (!rep->remote)
 			continue;
 		if (replica_is_replica_healthy(r, set_hs))
 			continue;
+
+		if (progress_cb)
+			progress_cb(msg, n++, max);
 
 		if (!replica_is_poolset_transformed(flags)) {
 			/* ignore errors from remove operation */
@@ -769,6 +778,8 @@ create_remote_replicas(struct pool_set *set,
 		}
 	}
 
+	if (progress_cb)
+		progress_cb(msg, max, max);
 	return 0;
 }
 
@@ -872,7 +883,7 @@ replica_sync(struct pool_set *set, struct poolset_health_status *s_hs,
 		goto out;
 
 	/* create all remote replicas */
-	if (create_remote_replicas(set, set_hs, flags)) {
+	if (create_remote_replicas(set, set_hs, flags, progress_cb)) {
 		ERR("creating remote replicas failed");
 		ret = -1;
 		goto out;

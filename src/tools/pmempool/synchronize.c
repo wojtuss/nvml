@@ -175,7 +175,7 @@ pmempool_sync_func(char *appname, int argc, char *argv[])
 		return ret;
 
 	ret = pmempool_sync_progress(ctx.poolset_file, ctx.flags,
-			Pmempool_progress_cb);
+			pmempool_progress_cb);
 
 	if (ret) {
 		outv_err("failed to synchronize: %s\n", pmempool_errormsg());

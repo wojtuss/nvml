@@ -132,6 +132,10 @@ enum pmempool_pool_type {
  * generate string format statuses
  */
 #define PMEMPOOL_CHECK_FORMAT_STR	(1 << 5)
+/*
+ * report progress of a sync or transform operation
+ */
+#define PMEMPOOL_PROGRESS		(1 << 6)
 
 /*
  * types of check statuses

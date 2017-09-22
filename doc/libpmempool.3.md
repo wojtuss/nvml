@@ -497,7 +497,7 @@ where
 
 * *total* - the maximum progress value.
 
-It is assumed that passing NULL for *msg* breaks the current progress report
+It is assumed that NULL value of the *msg* breaks the current progress report
 (e.g. in case of an error).
 
 >NOTE: The !pmempool_sync and !pmempool_sync_progress APIs are experimental and

@@ -302,15 +302,22 @@ replica_find_unbroken_part(unsigned repn, struct poolset_health_status *set_hs)
 }
 
 /*
- * replica_count_broken_parts -- get the number of all broken parts in a poolset
+ * poolset_count_broken_parts -- get the number of all broken parts in a poolset
+ *
+ * localization values:
+ * 0 - count local and remote parts,
+ * 1 - count local parts only,
+ * 2 - count remote parts (i.e. remote replicas) only.
  */
 unsigned
-replica_count_broken_parts(struct pool_set *set,
-		struct poolset_health_status *set_hs, int local_only)
+poolset_count_broken_parts(struct pool_set *set,
+		struct poolset_health_status *set_hs, int localization)
 {
 	unsigned n = 0;
 	for (unsigned r = 0; r < set->nreplicas; ++r) {
-		if (local_only && set->replica[r]->remote)
+		if (set->replica[r]->remote && localization == 1)
+			continue;
+		if (!set->replica[r]->remote && localization == 2)
 			continue;
 		for (unsigned p = 0; p < set->replica[r]->nparts; ++p) {
 			if (replica_is_part_broken(r, p, set_hs))
@@ -1147,7 +1154,6 @@ util_memcpy_persist(int is_pmem, void *to, const void *from, size_t size,
 
 		size_t off = 0;
 		size_t next_off = 0;
-
 		progress_cb(msg, 0, size);
 		for (unsigned i = 0; i < 100; ++i) {
 			next_off = (size * (i + 1) + 99) / 100;
@@ -1165,28 +1171,49 @@ int
 util_rpmem_read(RPMEMpool *rpp, void *buff, size_t offset, size_t length,
 		unsigned lane, const char *msg, PMEM_progress_cb progress_cb)
 {
-
-}
-
-int
-util_rpmem_persist(RPMEMpool *rpp, size_t offset, size_t length,
-		unsigned lane, const char *msg, RPMEM_progress_cb progress_cb)
-{
-	int ret = 0;
-
 	if (progress_cb == NULL) {
-		ret = Rpmem_persist(rpp, offset, length, lane);
+		return Rpmem_read(rpp, buff, offset, length, lane);
 	} else {
 		if (msg == NULL || *msg == '\0')
 			msg = "Persisting data";
 
 		size_t off = 0;
 		size_t next_off = 0;
-
+		int ret = 0;
 		progress_cb(msg, 0, length);
 		for (unsigned i = 0; i < 100; ++i) {
 			next_off = (length * (i + 1) + 99) / 100;
-			ret = Rpmem_persist(rpp->fip, offset + off,
+			ret = Rpmem_read(rpp, ADDR_SUM(buff, off),
+					offset + off, next_off - off, lane);
+			if (unlikely(ret)) {
+				progress_cb(NULL, 0, 0);
+				break;
+			} else {
+				progress_cb(msg, next_off, length);
+			}
+			off = next_off;
+		}
+		return ret;
+	}
+}
+
+int
+util_rpmem_persist(RPMEMpool *rpp, size_t offset, size_t length,
+		unsigned lane, const char *msg, RPMEM_progress_cb progress_cb)
+{
+	if (progress_cb == NULL) {
+		return Rpmem_persist(rpp, offset, length, lane);
+	} else {
+		if (msg == NULL || *msg == '\0')
+			msg = "Persisting data";
+
+		size_t off = 0;
+		size_t next_off = 0;
+		int ret = 0;
+		progress_cb(msg, 0, length);
+		for (unsigned i = 0; i < 100; ++i) {
+			next_off = (length * (i + 1) + 99) / 100;
+			ret = Rpmem_persist(rpp, offset + off,
 					next_off - off, lane);
 			if (unlikely(ret)) {
 				progress_cb(NULL, 0, 0);
@@ -1196,8 +1223,8 @@ util_rpmem_persist(RPMEMpool *rpp, size_t offset, size_t length,
 			}
 			off = next_off;
 		}
+		return ret;
 	}
-
 }
 
 
