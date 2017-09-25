@@ -69,9 +69,6 @@
 #define REQ_BUFF_SIZE	2048U
 #define Q_BUFF_SIZE	8192
 
-/* a flag for enabling reporting progress for sync and transform */
-int Progress_enabled;
-
 typedef const char *(*enum_to_str_fn)(int);
 
 /*
@@ -1406,50 +1403,39 @@ pool_set_file_persist(struct pool_set_file *file, const void *addr, size_t len)
 }
 
 /*
- * pmempool_progress_init -- initialize progress reporting based on an
- *                           environment variable
+ * util_is_pmempool_progress_set -- check whether an environment variable
+ *                                  that indicates progress reporting is set
  */
-void
-pmempool_progress_init(void)
+int
+util_is_pmempool_progress_set(void)
 {
 	LOG(3, NULL);
 
 	char *progress = os_getenv(PMEMPOOL_PROGRESS_VAR);
 	if (progress && strcmp(progress, "1") == 0) {
 		LOG(3, "%s set to 1", PMEMPOOL_PROGRESS_VAR);
-		Progress_enabled = 1;
+		return 1;
+	} else {
+		return 0;
 	}
-}
-
-/*
- * pmempool_progress_enable -- enable reporting progress
- */
-void
-pmempool_progress_enable(void)
-{
-	LOG(3, NULL);
-	Progress_enabled = 1;
 }
 
 /*
  * pmempool_progress_cb -- a callback function for printing progress of
  *                         operations to stdout
  */
-int
+void
 pmempool_progress_cb(const char *msg, size_t curr, size_t total)
 {
 	LOG(3, "msg %s, curr %zu, total %zu", msg, curr, total);
 
-	if (Progress_enabled != 1)
-		return 0;
-
 	if (msg == NULL) {
 		printf("\n");
-		return 0;
+		return;
 	}
 
 	if (total == 0)
-		return 0;
+		return;
 
 	printf("%s", msg);
 	int percent = (int)(curr * 100 / total);
@@ -1459,5 +1445,4 @@ pmempool_progress_cb(const char *msg, size_t curr, size_t total)
 	else
 		printf("\r");
 	fflush(stdout);
-	return 0;
 }

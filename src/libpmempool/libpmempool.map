@@ -40,9 +40,7 @@ LIBPMEMPOOL_1.0 {
 		pmempool_check;
 		pmempool_check_end;
 		pmempool_transform;
-		pmempool_transform_progress;
 		pmempool_sync;
-		pmempool_sync_progress;
 		pmempool_rm;
 	local:
 		*;

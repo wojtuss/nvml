@@ -63,6 +63,7 @@ static int
 check_flags_sync(unsigned flags)
 {
 	flags &= ~(unsigned)PMEMPOOL_DRY_RUN;
+	flags &= ~(unsigned)PMEMPOOL_PROGRESS;
 	return flags > 0;
 }
 
@@ -74,6 +75,7 @@ static int
 check_flags_transform(unsigned flags)
 {
 	flags &= ~(unsigned)PMEMPOOL_DRY_RUN;
+	flags &= ~(unsigned)PMEMPOOL_PROGRESS;
 	return flags > 0;
 }
 
@@ -1227,19 +1229,23 @@ util_rpmem_persist(RPMEMpool *rpp, size_t offset, size_t length,
 	}
 }
 
-
-
 /*
- * pmempool_sync_progressU -- synchronize replicas within a poolset with
- *                           reporting progress of the operation
+ * pmempool_syncU -- synchronize replicas within a poolset
  */
 #ifndef _WIN32
 static inline
 #endif
 int
-pmempool_sync_progressU(const char *poolset, unsigned flags,
-		PMEM_progress_cb progress_cb)
+pmempool_syncU(const char *poolset, unsigned flags, ...)
 {
+	PMEM_progress_cb progress_cb = NULL;
+	if (flags & PMEMPOOL_PROGRESS) {
+		va_list arg;
+		va_start(arg, flags);
+		progress_cb = va_arg(arg, PMEM_progress_cb);
+		va_end(arg);
+	}
+
 	LOG(3, "poolset %s, flags %u, progress_cb %p", poolset, flags,
 			progress_cb);
 	ASSERTne(poolset, NULL);
@@ -1300,68 +1306,37 @@ err:
 
 }
 
-/*
- * pmempool_syncU -- synchronize replicas within a poolset
- */
-#ifndef _WIN32
-static inline
-#endif
-int
-pmempool_syncU(const char *poolset, unsigned flags)
-{
-	LOG(3, "poolset %s, flags %u", poolset, flags);
-
-	return pmempool_sync_progressU(poolset, flags, NULL);
-}
-
-#ifndef _WIN32
-/*
- * pmempool_sync_progress -- synchronize replicas within a poolset and report
- *                          progress of the operation
- */
-int
-pmempool_sync_progress(const char *poolset, unsigned flags,
-		PMEM_progress_cb progress_cb)
-{
-	return pmempool_sync_progressU(poolset, flags, progress_cb);
-}
-#else
-/*
- * pmempool_syncW -- synchronize replicas within a poolset in widechar and
- *                   report progress of the operation
- */
-int
-pmempool_sync_progressW(const wchar_t *poolset, unsigned flags,
-		PMEM_progress_cb progress_cb)
-{
-	char *path = util_toUTF8(poolset);
-	if (path == NULL) {
-		ERR("Invalid poolest file path.");
-		return -1;
-	}
-
-	int ret = pmempool_sync_progressU(path, flags, progress_cb);
-
-	util_free_UTF8(path);
-	return ret;
-}
-#endif
-
 #ifndef _WIN32
 /*
  * pmempool_sync -- synchronize replicas within a poolset
+ *
+ * if flag PMEMPOOL_PROGRESS is set and an additional argument is a function of
+ * PMEM_progress_cb type, the progress of the operation will be reported using
+ * this function
  */
 int
-pmempool_sync(const char *poolset, unsigned flags)
+pmempool_sync(const char *poolset, unsigned flags, ...)
 {
-	return pmempool_syncU(poolset, flags);
+	if (flags & PMEMPOOL_PROGRESS) {
+		va_list arg;
+		va_start(arg, flags);
+		PMEM_progress_cb progress_cb = va_arg(arg, PMEM_progress_cb);
+		va_end(arg);
+		return pmempool_syncU(poolset, flags, progress_cb);
+	} else {
+		return pmempool_syncU(poolset, flags);
+	}
 }
 #else
 /*
  * pmempool_syncW -- synchronize replicas within a poolset in widechar
+ *
+ * if flag PMEMPOOL_PROGRESS is set and an additional argument is a function of
+ * PMEM_progress_cb type, the progress of the operation will be reported using
+ * this function
  */
 int
-pmempool_syncW(const wchar_t *poolset, unsigned flags)
+pmempool_syncW(const wchar_t *poolset, unsigned flags, ...)
 {
 	char *path = util_toUTF8(poolset);
 	if (path == NULL) {
@@ -1369,7 +1344,16 @@ pmempool_syncW(const wchar_t *poolset, unsigned flags)
 		return -1;
 	}
 
-	int ret = pmempool_syncU(path, flags);
+	int ret;
+	if (flags & PMEMPOOL_PROGRESS) {
+		va_list arg;
+		va_start(arg, flags);
+		PMEM_progress_cb progress_cb = va_arg(arg, PMEM_progress_cb);
+		va_end(arg);
+		ret = pmempool_syncU(path, flags, progress_cb);
+	} else {
+		ret = pmempool_syncU(path, flags);
+	}
 
 	util_free_UTF8(path);
 	return ret;
@@ -1377,18 +1361,26 @@ pmempool_syncW(const wchar_t *poolset, unsigned flags)
 #endif
 
 /*
- * pmempool_transform_progressU -- alter poolset structure and report progress
- *                                of the operation
+ * pmempool_transformU -- alter poolset structure
  */
 #ifndef _WIN32
 static inline
 #endif
 int
-pmempool_transform_progressU(const char *poolset_src, const char *poolset_dst,
-		unsigned flags, PMEM_progress_cb progress_cb)
+pmempool_transformU(const char *poolset_src, const char *poolset_dst,
+		unsigned flags, ...)
 {
+	PMEM_progress_cb progress_cb = NULL;
+	if (flags & PMEMPOOL_PROGRESS) {
+		va_list arg;
+		va_start(arg, flags);
+		progress_cb = va_arg(arg, PMEM_progress_cb);
+		va_end(arg);
+	}
+
 	LOG(3, "poolset_src %s, poolset_dst %s, flags %u, progress_cb %p",
 			poolset_src, poolset_dst, flags, progress_cb);
+
 	ASSERTne(poolset_src, NULL);
 	ASSERTne(poolset_dst, NULL);
 
@@ -1486,84 +1478,40 @@ err:
 	return -1;
 }
 
-/*
- * pmempool_transformU -- alter poolset structure
- */
-#ifndef _WIN32
-static inline
-#endif
-int
-pmempool_transformU(const char *poolset_src, const char *poolset_dst,
-		unsigned flags)
-{
-	LOG(3, "poolset_src %s, poolset_dst %s, flags %u",
-			poolset_src, poolset_dst, flags);
-
-	return pmempool_transform_progressU(poolset_src, poolset_dst, flags,
-			NULL);
-}
-
-#ifndef _WIN32
-/*
- * pmempool_transform_progress -- alter poolset structure and report progress
- *                               of the operation
- */
-int
-pmempool_transform_progress(const char *poolset_src, const char *poolset_dst,
-		unsigned flags, PMEM_progress_cb progress_cb)
-{
-	return pmempool_transform_progressU(poolset_src, poolset_dst, flags,
-			progress_cb);
-}
-#else
-/*
- * pmempool_transform_progressW -- alter poolset structure in widechar and
- *                                 report progress of the operation
- */
-int
-pmempool_transform_progressW(const wchar_t *poolset_src,
-	const wchar_t *poolset_dst, unsigned flags,
-	PMEM_progress_cb progress_cb)
-{
-	char *path_src = util_toUTF8(poolset_src);
-	if (path_src == NULL) {
-		ERR("Invalid source poolest file path.");
-		return -1;
-	}
-
-	char *path_dst = util_toUTF8(poolset_dst);
-	if (path_dst == NULL) {
-		ERR("Invalid destination poolest file path.");
-		Free(path_src);
-		return -1;
-	}
-
-	int ret = pmempool_transform_progressU(path_src, path_dst, flags,
-			progress_cb);
-
-	util_free_UTF8(path_src);
-	util_free_UTF8(path_dst);
-	return ret;
-}
-#endif
-
 #ifndef _WIN32
 /*
  * pmempool_transform -- alter poolset structure
+ *
+ * if flag PMEMPOOL_PROGRESS is set and an additional argument is a function of
+ * PMEM_progress_cb type, the progress of the operation will be reported using
+ * this function
  */
 int
 pmempool_transform(const char *poolset_src,
-	const char *poolset_dst, unsigned flags)
+	const char *poolset_dst, unsigned flags, ...)
 {
-	return pmempool_transformU(poolset_src, poolset_dst, flags);
+	if (flags & PMEMPOOL_PROGRESS) {
+		va_list arg;
+		va_start(arg, flags);
+		PMEM_progress_cb progress_cb = va_arg(arg, PMEM_progress_cb);
+		va_end(arg);
+		return pmempool_transformU(poolset_src, poolset_dst, flags,
+				progress_cb);
+	} else {
+		return pmempool_transformU(poolset_src, poolset_dst, flags);
+	}
 }
 #else
 /*
  * pmempool_transformW -- alter poolset structure in widechar
+ *
+ * if flag PMEMPOOL_PROGRESS is set and an additional argument is a function of
+ * PMEM_progress_cb type, the progress of the operation will be reported using
+ * this function
  */
 int
 pmempool_transformW(const wchar_t *poolset_src,
-	const wchar_t *poolset_dst, unsigned flags)
+	const wchar_t *poolset_dst, unsigned flags, ...)
 {
 	char *path_src = util_toUTF8(poolset_src);
 	if (path_src == NULL) {
@@ -1578,7 +1526,17 @@ pmempool_transformW(const wchar_t *poolset_src,
 		return -1;
 	}
 
-	int ret = pmempool_transformU(path_src, path_dst, flags);
+	int ret;
+	if (flags & PMEMPOOL_PROGRESS) {
+		va_list arg;
+		va_start(arg, flags);
+		PMEM_progress_cb progress_cb = va_arg(arg, PMEM_progress_cb);
+		va_end(arg);
+		ret = pmempool_transformU(path_src, path_dst, flags,
+				progress_cb);
+	} else {
+		ret = pmempool_transformU(path_src, path_dst, flags);
+	}
 
 	util_free_UTF8(path_src);
 	util_free_UTF8(path_dst);

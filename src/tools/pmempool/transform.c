@@ -144,7 +144,7 @@ pmempool_transform_parse_args(struct pmempool_transform_context *ctx,
 			out_set_vlevel(1);
 			break;
 		case 'p':
-			pmempool_progress_enable();
+			ctx->flags |= PMEMPOOL_PROGRESS;
 			break;
 		default:
 			print_usage(appname);
@@ -176,7 +176,11 @@ pmempool_transform_func(char *appname, int argc, char *argv[])
 	if ((ret = pmempool_transform_parse_args(&ctx, appname, argc, argv)))
 		return ret;
 
-	ret = pmempool_transform_progress(ctx.poolset_file_src,
+	/* check whether progress should be reported */
+	if (util_is_pmempool_progress_set())
+		ctx.flags |= PMEMPOOL_PROGRESS;
+
+	ret = pmempool_transform(ctx.poolset_file_src,
 			ctx.poolset_file_dst, ctx.flags, pmempool_progress_cb);
 
 	if (ret) {

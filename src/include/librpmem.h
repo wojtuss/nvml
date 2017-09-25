@@ -56,7 +56,7 @@ typedef struct rpmem_pool RPMEMpool;
  *
  * Expected behavior: passing NULL as msg cancels the current progress report
  */
-typedef int (*RPMEM_progress_cb)(const char *msg, size_t curr, size_t total);
+typedef void (*RPMEM_progress_cb)(const char *msg, size_t curr, size_t total);
 
 #define RPMEM_POOL_HDR_SIG_LEN	8
 #define RPMEM_POOL_HDR_UUID_LEN	16 /* uuid byte length */

@@ -143,7 +143,7 @@ pmempool_sync_parse_args(struct pmempool_sync_context *ctx, char *appname,
 			out_set_vlevel(1);
 			break;
 		case 'p':
-			pmempool_progress_enable();
+			ctx->flags |= PMEMPOOL_PROGRESS;
 			break;
 		default:
 			print_usage(appname);
@@ -174,8 +174,11 @@ pmempool_sync_func(char *appname, int argc, char *argv[])
 	if ((ret = pmempool_sync_parse_args(&ctx, appname, argc, argv)))
 		return ret;
 
-	ret = pmempool_sync_progress(ctx.poolset_file, ctx.flags,
-			pmempool_progress_cb);
+	/* check whether progress should be reported */
+	if (util_is_pmempool_progress_set())
+		ctx.flags |= PMEMPOOL_PROGRESS;
+
+	ret = pmempool_sync(ctx.poolset_file, ctx.flags, pmempool_progress_cb);
 
 	if (ret) {
 		outv_err("failed to synchronize: %s\n", pmempool_errormsg());

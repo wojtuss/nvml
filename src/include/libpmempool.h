@@ -93,7 +93,7 @@ extern "C" {
  *
  * Expected behavior: passing NULL as msg cancels the current progress report
  */
-typedef int (*PMEM_progress_cb)(const char *msg, size_t curr, size_t total);
+typedef void (*PMEM_progress_cb)(const char *msg, size_t curr, size_t total);
 
 /* PMEMPOOL CHECK */
 
@@ -259,20 +259,10 @@ struct pmempool_check_statusW *pmempool_checkW(PMEMpoolcheck *ppc);
  * EXPERIMENTAL
  */
 #ifndef _WIN32
-int pmempool_sync(const char *poolset_file, unsigned flags);
+int pmempool_sync(const char *poolset_file, unsigned flags, ...);
 #else
-int pmempool_syncU(const char *poolset_file, unsigned flags);
-int pmempool_syncW(const wchar_t *poolset_file, unsigned flags);
-#endif
-
-#ifndef _WIN32
-int pmempool_sync_progress(const char *poolset_file, unsigned flags,
-		PMEM_progress_cb progress_cb);
-#else
-int pmempool_sync_progressU(const char *poolset_file, unsigned flags,
-		PMEM_progress_cb progress_cb);
-int pmempool_sync_progressW(const wchar_t *poolset_file, unsigned flags,
-		PMEM_progress_cb progress_cb);
+int pmempool_syncU(const char *poolset_file, unsigned flags, ...);
+int pmempool_syncW(const wchar_t *poolset_file, unsigned flags, ...);
 #endif
 
 /*
@@ -282,25 +272,12 @@ int pmempool_sync_progressW(const wchar_t *poolset_file, unsigned flags,
  */
 #ifndef _WIN32
 int pmempool_transform(const char *poolset_file_src,
-	const char *poolset_file_dst, unsigned flags);
+	const char *poolset_file_dst, unsigned flags, ...);
 #else
 int pmempool_transformU(const char *poolset_file_src,
-	const char *poolset_file_dst, unsigned flags);
+	const char *poolset_file_dst, unsigned flags, ...);
 int pmempool_transformW(const wchar_t *poolset_file_src,
-	const wchar_t *poolset_file_dst, unsigned flags);
-#endif
-
-#ifndef _WIN32
-int pmempool_transform_progress(const char *poolset_file_src,
-	const char *poolset_file_dst, unsigned flags,
-	PMEM_progress_cb progress_cb);
-#else
-int pmempool_transform_progressU(const char *poolset_file_src,
-	const char *poolset_file_dst, unsigned flags,
-	PMEM_progress_cb progress_cb);
-int pmempool_transform_progressW(const wchar_t *poolset_file_src,
-	const wchar_t *poolset_file_dst, unsigned flags,
-	PMEM_progress_cb progress_cb);
+	const wchar_t *poolset_file_dst, unsigned flags, ...);
 #endif
 
 /* PMEMPOOL RM */
